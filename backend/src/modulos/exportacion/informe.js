@@ -135,7 +135,7 @@ export function generarInforme(datos, idioma = 'es') {
   doc.moveDown(0.8);
 
   // Fecha, emisor, NIF, número, categoría, base, IVA, total.
-  const anchos = [56, 118, 66, 62, 75, 49, 46, 27];
+  const anchos = [52, 104, 60, 56, 80, 58, 52, 62];
   const escala = ancho / anchos.reduce((s, a) => s + a, 0);
   const columnas = anchos.map((a) => a * escala);
   const alineacion = (i) => (i >= 5 ? 'right' : 'left');
@@ -145,7 +145,8 @@ export function generarInforme(datos, idioma = 'es') {
     let x = MARGEN;
     doc.font(negrita ? 'Helvetica-Bold' : 'Helvetica').fontSize(tamano).fillColor(color);
     valores.forEach((v, i) => {
-      doc.text(v ?? '', x + 2, y, { width: columnas[i] - 4, align: alineacion(i), lineBreak: false, ellipsis: true });
+      // Con alto fijo y ellipsis, pdfkit corta el texto largo con "…" en vez de saltar de línea.
+      doc.text(v ?? '', x + 2, y, { width: columnas[i] - 4, height: tamano + 2, align: alineacion(i), ellipsis: true });
       x += columnas[i];
     });
     doc.y = y + tamano + 6;

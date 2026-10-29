@@ -1,1 +1,37 @@
 /* Informes (RF-49 a RF-53). Responsable: Ana (#25) */
+.informes-aviso { margin: calc(-1 * var(--e-2)) 0 var(--hueco); }
+.informes-rejilla { display: grid; gap: var(--hueco); grid-template-columns: 1fr; align-items: start; }
+.informes-texto { margin: var(--e-1) 0 var(--e-4); }
+
+.informes-atajos { display: flex; width: 100%; overflow-x: auto; }
+.informes-atajos .pestana { flex: 1 1 auto; justify-content: center; min-height: 44px; padding: 0 var(--e-2); font-size: 13px; white-space: nowrap; }
+.informes-atajos .pestana[aria-pressed="true"] { background: var(--tarjeta); color: var(--texto); box-shadow: var(--sombra); }
+
+.informes-fechas { display: grid; grid-template-columns: minmax(0, 1fr) minmax(0, 1fr); gap: var(--e-3); }
+.informes-fechas .campo { min-width: 0; }
+.informes-fechas input { min-width: 0; padding: 0 var(--e-3); }
+
+.informes-categorias { border: 0; margin: 0; padding: 0; display: flex; flex-direction: column; gap: var(--e-1); }
+.informes-categorias legend { padding: 0; font-size: 14px; font-weight: 500; }
+.informes-chips { display: flex; flex-wrap: wrap; gap: var(--e-2); margin-top: var(--e-2); }
+.informes-chip { position: relative; cursor: pointer; }
+.informes-chip input { position: absolute; opacity: 0; width: 1px; height: 1px; }
+.informes-chip span {
+  display: inline-flex; align-items: center; gap: var(--e-1); min-height: 44px; padding: 0 var(--e-4);
+  border: 1px solid var(--borde); border-radius: var(--pildora); font-size: 14px; background: var(--tarjeta);
+}
+/* Marcada: borde y fondo naranja suave, y una marca de texto para no depender solo del color. */
+.informes-chip input:checked + span { border-color: var(--acento); background: var(--naranja-suave); font-weight: 600; }
+.informes-chip input:checked + span::before { content: '✓'; color: var(--acento); }
+.informes-chip input:focus-visible + span { outline: 2px solid var(--acento); outline-offset: 2px; }
+
+.informes-acciones { display: flex; flex-direction: column; gap: var(--e-3); }
+.informes-acciones .boton { width: 100%; }
+.informes-envio { display: flex; flex-direction: column; gap: var(--e-2); }
+
+@media (min-width: 1024px) {
+  .informes-rejilla { grid-template-columns: 3fr 2fr; }
+  .informes-atajos { display: inline-flex; width: auto; align-self: flex-start; }
+  .informes-atajos .pestana { flex: none; padding: 0 var(--e-4); font-size: 14px; }
+  .informes-acciones .boton { width: auto; align-self: flex-start; }
+}
