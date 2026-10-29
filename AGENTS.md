@@ -90,7 +90,12 @@ Somos tres (Dani, Rodrigo y Ana) y cada archivo tiene un único responsable (ver
 3. Nunca hagas commit ni push directo a `master`.
 4. Commits pequeños con mensajes claros en español.
 5. Antes de subir: `cd backend && npm test`, y prueba la pantalla en el navegador (móvil y ordenador).
-6. Si `master` ha cambiado mientras trabajabas: `git pull origin master` en tu rama (merge, no rebase) y vuelve a probar.
-7. Sube la rama: `git push -u origin <rama>`.
-8. Abre la PR contra `master` con `gh pr create`, rellenando la plantilla y con `Closes #N` en la descripción.
-9. No fusiones la PR: la revisa y fusiona una persona.
+6. **Para y deja que la persona lo revise en su local.** Antes de hacer push o abrir la PR, la IA se detiene y le dice a la persona con la que trabaja:
+   - qué ha cambiado, en dos o tres frases;
+   - cómo verlo: con `arrancar.bat` abierto (o `npm run dev`), qué URL abrir (por ejemplo `http://localhost:3000/app/facturas`), con qué usuario entrar (demo@cuadra.app / cuadra1234) y qué probar;
+   - que recargue con F5 si ya tenía la web abierta.
+   Después **espera a que la persona diga que está bien**. Si pide cambios, se hacen y se vuelve a este paso. Sin su visto bueno no se hace push ni PR.
+7. Si `master` ha cambiado mientras trabajabas: `git pull origin master` en tu rama (merge, no rebase) y vuelve a probar.
+8. Sube la rama: `git push -u origin <rama>`.
+9. Abre la PR contra `master` con `gh pr create`, rellenando la plantilla y con `Closes #N` en la descripción.
+10. No fusiones la PR: la revisa y fusiona una persona.
