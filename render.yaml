@@ -1,13 +1,16 @@
-# Despliegue en Render (https://render.com). Ver docs/DESPLIEGUE.md.
-# La base de datos es PostgreSQL en Neon (gratis): pega su URL en DATABASE_URL.
+# Despliegue en Render (https://render.com). Paso a paso en docs/DESPLIEGUE.md.
+# Un único servicio sirve la web (frontend/) y la API (backend/).
+# La base de datos es PostgreSQL en Neon (gratis): su URL va en DATABASE_URL.
+#
+# Sin rootDir a propósito: así cualquier cambio en frontend/ o backend/ despliega.
 services:
   - type: web
     name: cuadra
     runtime: node
     plan: free
-    rootDir: backend
-    buildCommand: npm ci
-    startCommand: npm start
+    region: frankfurt
+    buildCommand: cd backend && npm ci
+    startCommand: cd backend && npm start
     healthCheckPath: /api/salud
     autoDeploy: true
     envVars:
@@ -17,33 +20,12 @@ services:
         value: "22"
       - key: JWT_SECRETO
         generateValue: true
+      - key: MODELO_IA
+        value: claude-opus-5-5
+      # Te las pide Render al crear el servicio:
       - key: DATABASE_URL
         sync: false
       - key: URL_PUBLICA
         sync: false
-      - key: ANTHROPIC_API_KEY
-        sync: false
-      - key: MODELO_IA
-        value: claude-opus-5-5
-      - key: SMTP_HOST
-        sync: false
-      - key: SMTP_PUERTO
-        sync: false
-      - key: SMTP_USUARIO
-        sync: false
-      - key: SMTP_CONTRASENA
-        sync: false
-      - key: EMAIL_REMITENTE
-        sync: false
-      - key: CORREO_DOMINIO
-        sync: false
-      - key: CORREO_WEBHOOK_SECRETO
-        sync: false
-      - key: GOOGLE_CLIENT_ID
-        sync: false
-      - key: GOOGLE_CLIENT_SECRET
-        sync: false
-      - key: STRIPE_SECRET_KEY
-        sync: false
-      - key: STRIPE_WEBHOOK_SECRET
-        sync: false
+      # El resto (ANTHROPIC_API_KEY, SMTP_*, GOOGLE_*, STRIPE_*, CORREO_*) se añaden
+      # después en Render > cuadra > Environment, cuando cada parte esté hecha.
