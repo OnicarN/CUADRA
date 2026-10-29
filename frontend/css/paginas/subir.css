@@ -1,1 +1,53 @@
 /* Subir facturas (RF-13 a RF-17, RF-23). Responsable: Dani (#12) */
+
+.zona-subida {
+  position: relative;
+  display: flex; flex-direction: column; align-items: center; text-align: center; gap: var(--e-3);
+  padding: var(--e-12) var(--e-6);
+  border: 2px dashed var(--borde);
+  transition: border-color .15s, background-color .15s;
+}
+.zona-subida .texto-2 { max-width: 46ch; }
+.zona-icono {
+  width: 64px; height: 64px; border-radius: var(--pildora);
+  background: var(--naranja-suave); color: var(--acento);
+  display: flex; align-items: center; justify-content: center;
+}
+.zona-icono svg { width: 32px; height: 32px; }
+.zona-acciones { display: flex; flex-wrap: wrap; justify-content: center; gap: var(--e-3); margin-top: var(--e-2); }
+
+.zona-suelta {
+  position: absolute; inset: 0; border-radius: inherit;
+  display: none; align-items: center; justify-content: center;
+  background: var(--naranja-suave); color: var(--texto); font-weight: 600;
+}
+.zona-activa { border-color: var(--acento); }
+.zona-activa .zona-suelta { display: flex; }
+
+/* Cámara */
+.camara { display: flex; flex-direction: column; align-items: center; gap: var(--e-4); }
+.camara-visor {
+  width: 100%; max-width: 640px; aspect-ratio: 3 / 4;
+  border-radius: var(--radio-campo); overflow: hidden; background: #000;
+}
+@media (min-width: 768px) { .camara-visor { aspect-ratio: 4 / 3; } }
+.camara-visor video { width: 100%; height: 100%; object-fit: cover; display: block; }
+.camara-miniaturas { display: flex; gap: var(--e-2); flex-wrap: wrap; justify-content: center; }
+.camara-miniaturas:empty { display: none; }
+.camara-miniaturas img { width: 56px; height: 56px; object-fit: cover; border-radius: var(--radio-campo); border: 1px solid var(--borde); }
+.camara-acciones {
+  width: 100%; max-width: 640px;
+  display: grid; grid-template-columns: 1fr auto 1fr; align-items: center; gap: var(--e-3);
+}
+.camara-acciones .boton:first-child { justify-self: start; }
+.camara-acciones .boton:last-child { justify-self: end; }
+.camara-disparador {
+  width: 72px; height: 72px; border-radius: var(--pildora); cursor: pointer;
+  border: 4px solid var(--boton); background: var(--tarjeta); padding: 6px;
+}
+.camara-disparador span { display: block; width: 100%; height: 100%; border-radius: inherit; background: var(--boton); }
+.camara-disparador:active span { transform: scale(.92); }
+
+/* Lista de subidas */
+.subida-revisar { display: inline-block; margin-top: var(--e-1); font-size: 14px; }
+#lista .fila-derecha { display: flex; flex-direction: column; align-items: flex-end; flex: none; }
