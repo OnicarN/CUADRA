@@ -3,11 +3,11 @@
 //
 // GET    /                 ?q&estado&desde&hasta&categoria&min&max&aviso&pagina      RF-37, RF-38 (hecho)
 //                          -> { facturas: [...], total }  (30 por página)
-// GET    /:id              factura con lineas_iva, avisos, cambios y categoría        RF-31
-// PATCH  /:id              { campo: valor, ..., lineas_iva? } solo si está pendiente  RF-31, RF-32
-// POST   /:id/confirmar                                                              RF-30
-// POST   /:id/reabrir      vuelve a pendiente y registra el cambio                   RF-33
-// DELETE /:id              solo si está pendiente o sin leer                         RF-34
+// GET    /:id              factura con lineas_iva, avisos, cambios y categoría        RF-31 (hecho)
+// PATCH  /:id              { campo: valor, ..., lineas_iva? } solo si está pendiente  RF-31, RF-32 (hecho)
+// POST   /:id/confirmar                                                              RF-30 (hecho)
+// POST   /:id/reabrir      vuelve a pendiente y registra el cambio                   RF-33 (hecho)
+// DELETE /:id              solo si está pendiente o sin leer                         RF-34 (hecho)
 // GET    /:id/original     el archivo original (?descargar=1 para descargar)         RF-39 (hecho)
 // POST   /:id/duplicado    { accion: 'descartar' | 'guardar' }                       RF-36
 //
@@ -18,6 +18,7 @@ import { aBuffer } from '../../core/db.js';
 import { pendiente, peticionIncorrecta, noEncontrado } from '../../core/errores.js';
 import { FORMATOS } from '../subida/servicio.js';
 import { listarFacturas, obtenerOriginal } from './consultas.js';
+import { obtenerFactura, editarFactura, confirmarFactura, reabrirFactura, borrarFactura } from './revision.js';
 
 const rutas = Router();
 rutas.use(requiereSesion);
@@ -36,11 +37,22 @@ function disposicion(tipo, nombre) {
 rutas.get('/', async (req, res) => {
   res.json(await listarFacturas(req.usuario.id, req.query));
 });
-rutas.get('/:id', () => { throw pendiente('#19'); });
-rutas.patch('/:id', () => { throw pendiente('#19'); });
-rutas.post('/:id/confirmar', () => { throw pendiente('#19'); });
-rutas.post('/:id/reabrir', () => { throw pendiente('#19'); });
-rutas.delete('/:id', () => { throw pendiente('#19'); });
+rutas.get('/:id', async (req, res) => {
+  res.json(await obtenerFactura(req.usuario.id, leerId(req.params.id)));
+});
+rutas.patch('/:id', async (req, res) => {
+  res.json(await editarFactura(req.usuario.id, leerId(req.params.id), req.body));
+});
+rutas.post('/:id/confirmar', async (req, res) => {
+  res.json(await confirmarFactura(req.usuario.id, leerId(req.params.id)));
+});
+rutas.post('/:id/reabrir', async (req, res) => {
+  res.json(await reabrirFactura(req.usuario.id, leerId(req.params.id)));
+});
+rutas.delete('/:id', async (req, res) => {
+  await borrarFactura(req.usuario.id, leerId(req.params.id));
+  res.status(204).end();
+});
 rutas.get('/:id/original', async (req, res) => {
   const original = await obtenerOriginal(req.usuario.id, leerId(req.params.id));
   if (!original) throw noEncontrado('No hemos encontrado el original de esta factura');

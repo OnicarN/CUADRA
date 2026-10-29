@@ -1,1 +1,107 @@
 /* Revisar factura (RF-30 a RF-36). Responsable: Rodrigo (#19) */
+
+.factura-volver {
+  display: inline-flex; align-items: center; gap: var(--e-1); min-height: 44px; margin-bottom: var(--e-2);
+}
+.factura-volver svg { width: 18px; height: 18px; }
+
+.factura-titulo { display: flex; flex-wrap: wrap; align-items: center; gap: var(--e-3); min-width: 0; }
+.factura-titulo .titulo-pagina { overflow-wrap: anywhere; }
+.factura-cifra { font-size: 28px; }
+@media (min-width: 1024px) { .factura-cifra { font-size: 36px; } }
+
+.factura-banners { margin-bottom: var(--hueco); }
+.factura-banners:empty { display: none; }
+.factura-banner-ok { background: var(--verde-suave); }
+.factura-banner-ok > svg:first-child { color: var(--verde); }
+#sugerencia-evento:not(:empty) { margin-bottom: var(--hueco); }
+
+/* ---------- Original ---------- */
+.factura-original-botones { display: flex; align-items: center; gap: var(--e-2); }
+.factura-visor {
+  display: block; width: 100%; height: 45vh; min-height: 280px;
+  border: 1px solid var(--borde); border-radius: var(--radio-campo); background: var(--gris-suave);
+}
+.factura-imagen { height: auto; max-height: 60vh; object-fit: contain; }
+@media (min-width: 1024px) {
+  .factura-original { position: sticky; top: 96px; }
+  .factura-visor { height: calc(100vh - 220px); }
+  .factura-imagen { height: auto; max-height: calc(100vh - 220px); }
+}
+
+/* ---------- Datos: se ven como texto y al pulsar se vuelven campo ---------- */
+.factura-campos { display: grid; grid-template-columns: 1fr; margin-top: var(--e-2); }
+@media (min-width: 600px) and (max-width: 1023px), (min-width: 1280px) {
+  .factura-campos { grid-template-columns: 1fr 1fr; column-gap: var(--e-4); }
+}
+.factura-campo { display: flex; flex-direction: column; gap: 2px; padding: var(--e-2) 0; border-bottom: 1px solid var(--borde); min-width: 0; }
+.factura-etiqueta { font-size: 13px; color: var(--texto-2); }
+.factura-valor {
+  display: flex; align-items: center; gap: var(--e-2); width: 100%; min-height: 44px;
+  padding: 0 var(--e-3); margin: 0 calc(-1 * var(--e-3)); width: calc(100% + 2 * var(--e-3));
+  border: 1px solid transparent; border-radius: var(--radio-campo); background: transparent;
+  font-size: 16px; font-weight: 500; text-align: left; cursor: pointer;
+}
+button.factura-valor:hover { background: var(--gris-suave); }
+button.factura-valor:focus-visible { border-color: var(--acento); outline: none; box-shadow: 0 0 0 3px var(--naranja-suave); }
+.factura-valor-fijo { cursor: default; }
+.factura-valor-texto { flex: 1; min-width: 0; overflow-wrap: anywhere; font-variant-numeric: tabular-nums; }
+.factura-vacio { color: var(--texto-2); font-weight: 400; }
+.factura-lapiz { width: 18px; height: 18px; color: var(--texto-2); flex: none; opacity: .6; }
+button.factura-valor:hover .factura-lapiz { opacity: 1; }
+.factura-sugerido { display: inline-flex; color: var(--acento); flex: none; }
+.factura-sugerido svg { width: 18px; height: 18px; }
+.titulo-seccion .factura-sugerido { vertical-align: middle; margin-left: var(--e-2); }
+.factura-control {
+  width: 100%; min-height: 44px; padding: 0 var(--e-3);
+  background: var(--tarjeta); border: 1px solid var(--acento); border-radius: var(--radio-campo);
+  box-shadow: 0 0 0 3px var(--naranja-suave); font-size: 16px; outline: none;
+}
+
+/* ---------- IVA ---------- */
+.factura-tabla { width: 100%; border-collapse: collapse; font-size: 15px; }
+.factura-tabla th { font-size: 13px; font-weight: 500; color: var(--texto-2); text-align: right; padding: 0 0 var(--e-2); }
+.factura-tabla td { text-align: right; padding: var(--e-2) 0; border-top: 1px solid var(--borde); }
+.factura-tabla th:first-child, .factura-tabla td:first-child { text-align: left; }
+.factura-sumas { margin: var(--e-3) 0 0; display: flex; flex-direction: column; gap: var(--e-1); }
+.factura-sumas div { display: flex; justify-content: space-between; gap: var(--e-3); }
+.factura-sumas dt { color: var(--texto-2); font-size: 14px; }
+.factura-sumas dd { margin: 0; font-weight: 600; }
+.factura-iva-vista { cursor: pointer; border-radius: var(--radio-campo); margin: 0 calc(-1 * var(--e-2)); padding: 0 var(--e-2); }
+.factura-iva-vista:hover { background: var(--gris-suave); }
+
+.factura-iva-form { display: flex; flex-direction: column; gap: var(--e-3); margin-top: var(--e-3); }
+.factura-linea { display: grid; grid-template-columns: 1fr 1fr 1fr 44px; gap: var(--e-2); align-items: end; }
+.factura-linea .campo label { display: flex; flex-direction: column; gap: var(--e-1); font-size: 13px; font-weight: 500; }
+.factura-linea .campo input { min-height: 44px; padding: 0 var(--e-2); min-width: 0; }
+.factura-linea + .factura-linea { margin-top: var(--e-2); }
+.factura-anadir-linea { align-self: flex-start; display: inline-flex; align-items: center; gap: var(--e-1); min-height: 44px; }
+.factura-anadir-linea svg { width: 18px; height: 18px; }
+.factura-iva-botones { display: flex; align-items: center; gap: var(--e-4); }
+.factura-iva-botones .boton-texto { min-height: 44px; }
+
+/* ---------- Acciones: en móvil se quedan a mano, encima de la barra de abajo ---------- */
+.factura-acciones { display: flex; flex-wrap: wrap; align-items: center; gap: var(--e-3); }
+.factura-acciones:empty { display: none; }
+.factura-acciones .boton-texto { min-height: 44px; display: inline-flex; align-items: center; gap: var(--e-1); }
+.factura-acciones .boton-texto svg { width: 18px; height: 18px; }
+@media (max-width: 1023px) {
+  .factura-acciones {
+    position: sticky; bottom: calc(var(--alto-barra-movil) + env(safe-area-inset-bottom) + var(--e-2)); z-index: 10;
+    padding: var(--e-3); border-radius: var(--radio-tarjeta);
+    background: var(--tarjeta); box-shadow: 0 4px 16px rgba(0, 0, 0, .12);
+  }
+  .factura-acciones .boton-principal { flex: 1; }
+}
+
+/* ---------- Historial ---------- */
+.factura-historial { margin-top: var(--e-2); }
+.factura-historial .fila-centro { display: flex; flex-direction: column; gap: 2px; overflow-wrap: anywhere; }
+
+/* ---------- Diálogo de confirmación ---------- */
+.factura-dialogo {
+  width: min(420px, calc(100% - 32px)); padding: var(--e-6); border: 0;
+  border-radius: var(--radio-tarjeta); background: var(--tarjeta); color: var(--texto);
+}
+.factura-dialogo::backdrop { background: rgba(0, 0, 0, .45); }
+.factura-dialogo-botones { display: flex; justify-content: flex-end; flex-wrap: wrap; gap: var(--e-3); margin-top: var(--e-6); }
