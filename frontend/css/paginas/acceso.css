@@ -6,3 +6,15 @@
 .acceso-pie { text-align: center; }
 .separador { display: flex; align-items: center; gap: var(--e-3); color: var(--texto-2); font-size: 14px; }
 .separador::before, .separador::after { content: ''; flex: 1; height: 1px; background: var(--borde); }
+
+/* Pantallas de resultado: verificar, recuperar y restablecer (#23) */
+.acceso-estado {
+  width: 56px; height: 56px; border-radius: var(--pildora);
+  display: flex; align-items: center; justify-content: center;
+  background: var(--naranja-suave); color: var(--acento);
+}
+.acceso-estado svg { width: 28px; height: 28px; }
+.acceso-estado.ok { background: var(--verde-suave); color: var(--verde); }
+.acceso-estado.mal { background: var(--rojo-suave); color: var(--rojo); }
+.acceso-acciones { display: flex; flex-direction: column; gap: var(--e-3); }
+.acceso-email { font-weight: 600; color: var(--texto); word-break: break-all; }
