@@ -1,0 +1,26 @@
+# Comprueba cada PR: instala, revisa la sintaxis de todo el JavaScript y pasa los tests.
+name: CI
+
+on:
+  pull_request:
+  push:
+    branches: [master]
+
+jobs:
+  pruebas:
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: backend
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+          cache-dependency-path: backend/package-lock.json
+      - run: npm ci
+      - name: Sintaxis del JavaScript (backend y frontend)
+        working-directory: .
+        run: git ls-files '*.js' | xargs -n1 node --check
+      - run: npm test

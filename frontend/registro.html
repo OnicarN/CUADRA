@@ -1,0 +1,49 @@
+<!doctype html>
+<html lang="es">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+  <title>Crear cuenta · Cuadra</title>
+  <meta name="description" content="Cuadra lee tus tickets y facturas y te avisa de lo que estás perdiendo antes de que cierre el trimestre.">
+  <meta name="theme-color" content="#F6F6F4" media="(prefers-color-scheme: light)">
+  <meta name="theme-color" content="#0F0F10" media="(prefers-color-scheme: dark)">
+  <link rel="icon" href="/img/favicon.svg" type="image/svg+xml">
+  <link rel="manifest" href="/manifest.webmanifest">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap">
+  <link rel="stylesheet" href="/css/base.css">
+  <link rel="stylesheet" href="/css/paginas/acceso.css">
+  <script>try{var t=localStorage.getItem('cuadra-tema');if(t==='claro'||t==='oscuro')document.documentElement.dataset.tema=t}catch(e){}</script>
+  <script type="module" src="/js/paginas/registro.js"></script>
+</head>
+<body>
+  <!-- Crear cuenta (RF-03, RF-05, RF-06). Responsable: Ana -->
+  <main class="contenedor acceso">
+    <section class="tarjeta acceso-tarjeta">
+      <h1 class="titulo-pagina" data-t="acceso.registro.titulo"></h1>
+      <p class="texto-2" data-t="acceso.registro.subtitulo"></p>
+      <button type="button" class="boton boton-secundario boton-bloque" id="google" data-icono="google"><span data-t="acceso.google"></span></button>
+      <p class="separador"><span data-t="acceso.o"></span></p>
+      <form class="formulario" id="formulario" novalidate>
+        <div class="campo">
+          <label for="nombre" data-t="acceso.nombre"></label>
+          <input id="nombre" name="nombre" autocomplete="name" required>
+        </div>
+        <div class="campo">
+          <label for="email" data-t="acceso.email"></label>
+          <input id="email" name="email" type="email" autocomplete="email" required>
+        </div>
+        <div class="campo">
+          <label for="password" data-t="acceso.password"></label>
+          <input id="password" name="password" type="password" autocomplete="new-password" minlength="8" required>
+          <span class="campo-ayuda" data-t="acceso.passwordAyuda"></span>
+        </div>
+        <p class="error-formulario" id="error" role="alert" hidden></p>
+        <button class="boton boton-principal boton-bloque" type="submit" data-t="acceso.registro.boton"></button>
+      </form>
+      <p class="texto-2 acceso-pie"><span data-t="acceso.registro.conCuenta"></span> <a class="boton-texto" href="/entrar" data-t="nav.entrar"></a></p>
+    </section>
+  </main>
+</body>
+</html>

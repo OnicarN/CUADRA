@@ -1,0 +1,24 @@
+/* Página de precios (RF-02) */
+.precios-cabecera {
+  display: flex; flex-direction: column; align-items: center; text-align: center; gap: var(--e-3);
+  padding: var(--e-8) 0;
+}
+.precios-cabecera .texto-2 { font-size: 16px; max-width: 52ch; }
+.precios-prueba { margin-top: var(--e-2); }
+.plan { display: flex; flex-direction: column; gap: var(--e-4); border: 1px solid transparent; }
+.plan-destacado { border-color: var(--acento); }
+.plan-cabecera { display: flex; align-items: center; justify-content: space-between; gap: var(--e-2); }
+.plan-precio { display: flex; align-items: baseline; gap: var(--e-1); }
+.plan-precio .texto-2 { white-space: nowrap; }
+.plan .boton { margin-top: auto; }
+.lista-check { list-style: none; margin: 0; padding: 0; display: flex; flex-direction: column; gap: var(--e-2); }
+.lista-check li { display: flex; gap: var(--e-2); align-items: flex-start; font-size: 15px; }
+.lista-check svg { width: 20px; height: 20px; color: var(--verde); flex: none; margin-top: 2px; }
+.lista-check li.no { color: var(--texto-2); }
+.lista-check li.no svg { color: var(--texto-2); }
+.precios-extras { margin-top: var(--e-12); display: flex; flex-direction: column; gap: var(--e-3); }
+.precios-extras .rejilla { margin-top: var(--e-2); }
+.extra .importe { white-space: nowrap; }
+.extra { display: flex; align-items: center; justify-content: space-between; gap: var(--e-3); }
+.precios-incluido { margin-top: var(--e-12); display: flex; flex-direction: column; gap: var(--e-4); }
+@media (min-width: 768px) { #incluido-todos { display: grid; grid-template-columns: 1fr 1fr; } }

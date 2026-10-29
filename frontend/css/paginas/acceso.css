@@ -1,0 +1,8 @@
+/* Entrar, crear cuenta, recuperar contraseña y verificar email. Responsable: Ana */
+.acceso { display: flex; justify-content: center; padding-top: var(--e-8); padding-bottom: var(--e-8); }
+.acceso-tarjeta { width: 100%; max-width: 440px; display: flex; flex-direction: column; gap: var(--e-4); }
+@media (min-width: 768px) { .acceso-tarjeta { padding: var(--e-8); } }
+.acceso-olvido { align-self: flex-start; font-size: 14px; }
+.acceso-pie { text-align: center; }
+.separador { display: flex; align-items: center; gap: var(--e-3); color: var(--texto-2); font-size: 14px; }
+.separador::before, .separador::after { content: ''; flex: 1; height: 1px; background: var(--borde); }

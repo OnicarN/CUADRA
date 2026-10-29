@@ -1,0 +1,49 @@
+# Despliegue en Render (https://render.com). Ver docs/DESPLIEGUE.md.
+# La base de datos es PostgreSQL en Neon (gratis): pega su URL en DATABASE_URL.
+services:
+  - type: web
+    name: cuadra
+    runtime: node
+    plan: free
+    rootDir: backend
+    buildCommand: npm ci
+    startCommand: npm start
+    healthCheckPath: /api/salud
+    autoDeploy: true
+    envVars:
+      - key: NODE_ENV
+        value: production
+      - key: NODE_VERSION
+        value: "22"
+      - key: JWT_SECRETO
+        generateValue: true
+      - key: DATABASE_URL
+        sync: false
+      - key: URL_PUBLICA
+        sync: false
+      - key: ANTHROPIC_API_KEY
+        sync: false
+      - key: MODELO_IA
+        value: claude-opus-5-5
+      - key: SMTP_HOST
+        sync: false
+      - key: SMTP_PUERTO
+        sync: false
+      - key: SMTP_USUARIO
+        sync: false
+      - key: SMTP_CONTRASENA
+        sync: false
+      - key: EMAIL_REMITENTE
+        sync: false
+      - key: CORREO_DOMINIO
+        sync: false
+      - key: CORREO_WEBHOOK_SECRETO
+        sync: false
+      - key: GOOGLE_CLIENT_ID
+        sync: false
+      - key: GOOGLE_CLIENT_SECRET
+        sync: false
+      - key: STRIPE_SECRET_KEY
+        sync: false
+      - key: STRIPE_WEBHOOK_SECRET
+        sync: false

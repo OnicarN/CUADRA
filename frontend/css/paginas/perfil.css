@@ -1,0 +1,7 @@
+/* Perfil (RF-10 a RF-12, RF-18, RF-19). Responsable: Ana (#24) */
+.perfil-usuario { display: flex; align-items: center; gap: var(--e-4); }
+.perfil-usuario .avatar { width: 56px; height: 56px; font-size: 22px; cursor: default; }
+.correo-cuadra { display: flex; align-items: center; gap: var(--e-2); margin-top: var(--e-2); flex-wrap: wrap; }
+.correo-cuadra code { font-family: inherit; font-weight: 600; word-break: break-all; }
+.perfil-enlaces .fila-icono { background: var(--gris-suave); }
+.perfil-enlaces .banner-flecha { width: 20px; height: 20px; color: var(--texto-2); }
