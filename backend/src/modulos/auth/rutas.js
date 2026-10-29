@@ -7,23 +7,36 @@
 // GET  /yo                     -> usuario de la sesión (401 si no hay)         (hecho)
 // GET  /sesion                 -> usuario de la sesión o null (web pública)    (hecho)
 // PUT  /preferencias           { idioma?, tema? }                              (hecho)
-// POST /verificar              { token }                     RF-07             (pendiente)
-// POST /reenviar-verificacion                                RF-07             (pendiente)
-// POST /recuperar              { email }                     RF-08             (pendiente)
-// POST /restablecer            { token, password }           RF-08             (pendiente)
-// GET  /google                 redirige a Google             RF-06             (pendiente)
-// GET  /google/callback                                      RF-06             (pendiente)
+// POST /verificar              { token } -> usuario          RF-07             (hecho)
+// POST /reenviar-verificacion                                RF-07             (hecho)
+// POST /recuperar              { email }                     RF-08             (hecho)
+// POST /restablecer            { token, password } -> usuario RF-08            (hecho)
+// GET  /google?volver=/ruta    redirige a Google             RF-06             (hecho)
+// GET  /google/callback                                      RF-06             (hecho)
+//
+// /registro acepta también { idioma } para mandar el email de verificación en ese idioma.
+// /entrar admite 10 intentos fallidos cada 15 minutos por IP y email (429 después).
 // DELETE /cuenta               { confirmacion }              RF-62             (pendiente, #27)
 import crypto from 'node:crypto';
 import { Router } from 'express';
 import { db } from '../../core/db.js';
 import { config } from '../../config.js';
 import { cifrarContrasena, comprobarContrasena, iniciarSesion, cerrarSesion, requiereSesion, leerSesion } from '../../core/auth.js';
-import { peticionIncorrecta, noAutorizado, conflicto, pendiente } from '../../core/errores.js';
+import { peticionIncorrecta, noAutorizado, conflicto, pendiente, ErrorHttp } from '../../core/errores.js';
 import { emailValido } from '../../core/validacion.js';
 import { DIAS_PRUEBA } from '../suscripcion/planes.js';
+import { crearToken, consumirToken, TIPOS_TOKEN } from './tokens.js';
+import { enviarEmailVerificacion, enviarEmailRecuperacion } from './correos.js';
+import { crearLimite } from './limite.js';
+import { googleConfigurado, urlConsentimiento, datosDeGoogle } from './google.js';
+import { rutaInterna } from './utilidades.js';
 
 const rutas = Router();
+
+const MINIMO_CONTRASENA = 8;
+const limiteEntrar = crearLimite({ intentos: 10, minutos: 15 });
+const limiteEmails = crearLimite({ intentos: 5, minutos: 15 });
+const COOKIE_GOOGLE = 'cuadra_google';
 
 export async function obtenerUsuario(id) {
   const { rows } = await db.query(
@@ -64,22 +77,39 @@ rutas.post('/registro', async (req, res) => {
   const password = String(req.body.password || '');
   if (!nombre) throw peticionIncorrecta('Escribe tu nombre');
   if (!emailValido(email)) throw peticionIncorrecta('El email no es válido');
-  if (password.length < 8) throw peticionIncorrecta('La contraseña tiene que tener al menos 8 caracteres');
+  if (password.length < MINIMO_CONTRASENA) throw peticionIncorrecta('La contraseña tiene que tener al menos 8 caracteres');
 
   const existe = await db.query('SELECT 1 FROM usuarios WHERE email = $1', [email]);
   if (existe.rows.length) throw conflicto('Ya hay una cuenta con ese email');
 
   const id = await crearUsuario({ nombre, email, passwordHash: await cifrarContrasena(password) });
-  // TODO Ana (#23): enviar el email de verificación (RF-07).
+  if (req.body.idioma === 'en') await db.query("UPDATE usuarios SET idioma = 'en' WHERE id = $1", [id]);
+  await mandarVerificacion(id);
   iniciarSesion(res, id);
   res.status(201).json(await obtenerUsuario(id));
 });
 
+// RF-07. Si el email no sale, la cuenta se crea igual: se puede reenviar desde la pantalla de verificar.
+async function mandarVerificacion(usuarioId) {
+  try {
+    const { rows } = await db.query('SELECT nombre, email, idioma FROM usuarios WHERE id = $1', [usuarioId]);
+    await enviarEmailVerificacion(rows[0], await crearToken(usuarioId, TIPOS_TOKEN.VERIFICAR_EMAIL));
+  } catch (error) {
+    console.error('No se pudo enviar el email de verificación:', error.message);
+  }
+}
+
 rutas.post('/entrar', async (req, res) => {
   const email = String(req.body.email || '').trim().toLowerCase();
+  const clave = `${req.ip}|${email}`;
+  limiteEntrar.comprobar(clave);
   const { rows } = await db.query('SELECT id, password_hash FROM usuarios WHERE email = $1', [email]);
   const ok = rows[0] && (await comprobarContrasena(String(req.body.password || ''), rows[0].password_hash));
-  if (!ok) throw noAutorizado('El email o la contraseña no son correctos');
+  if (!ok) {
+    limiteEntrar.fallo(clave);
+    throw noAutorizado('El email o la contraseña no son correctos');
+  }
+  limiteEntrar.limpiar(clave);
   iniciarSesion(res, rows[0].id);
   res.json(await obtenerUsuario(rows[0].id));
 });
@@ -111,12 +141,107 @@ rutas.put('/preferencias', requiereSesion, async (req, res) => {
   res.json(await obtenerUsuario(req.usuario.id));
 });
 
-rutas.post('/verificar', () => { throw pendiente('#23'); });
-rutas.post('/reenviar-verificacion', requiereSesion, () => { throw pendiente('#23'); });
-rutas.post('/recuperar', () => { throw pendiente('#23'); });
-rutas.post('/restablecer', () => { throw pendiente('#23'); });
-rutas.get('/google', () => { throw pendiente('#23'); });
-rutas.get('/google/callback', () => { throw pendiente('#23'); });
+const enlaceNoValido = () => peticionIncorrecta('El enlace no es válido o ha caducado', { codigo: 'enlace_no_valido' });
+
+// RF-07. El enlace del email abre /verificar?token=..., que llama aquí. Deja la sesión iniciada.
+rutas.post('/verificar', async (req, res) => {
+  const usuarioId = await consumirToken(req.body.token, TIPOS_TOKEN.VERIFICAR_EMAIL);
+  if (!usuarioId) throw enlaceNoValido();
+  await db.query('UPDATE usuarios SET email_verificado = true WHERE id = $1', [usuarioId]);
+  iniciarSesion(res, usuarioId);
+  res.json(await obtenerUsuario(usuarioId));
+});
+
+rutas.post('/reenviar-verificacion', requiereSesion, async (req, res) => {
+  const usuario = await obtenerUsuario(req.usuario.id);
+  if (!usuario) throw noAutorizado();
+  if (usuario.email_verificado) throw peticionIncorrecta('Tu email ya está confirmado', { codigo: 'ya_verificado' });
+  const clave = `reenviar|${usuario.id}`;
+  limiteEmails.comprobar(clave);
+  limiteEmails.fallo(clave);
+  await mandarVerificacion(usuario.id);
+  res.json({ ok: true });
+});
+
+// RF-08. Responde lo mismo exista o no la cuenta, para no desvelar qué emails están registrados.
+rutas.post('/recuperar', async (req, res) => {
+  const email = String(req.body.email || '').trim().toLowerCase();
+  if (!emailValido(email)) throw peticionIncorrecta('El email no es válido');
+  const clave = `recuperar|${req.ip}|${email}`;
+  limiteEmails.comprobar(clave);
+  limiteEmails.fallo(clave);
+  const { rows } = await db.query('SELECT id, nombre, email, idioma FROM usuarios WHERE email = $1', [email]);
+  if (rows[0]) {
+    try {
+      await enviarEmailRecuperacion(rows[0], await crearToken(rows[0].id, TIPOS_TOKEN.RECUPERAR_CONTRASENA));
+    } catch (error) {
+      console.error('No se pudo enviar el email de recuperación:', error.message);
+    }
+  }
+  res.json({ ok: true });
+});
+
+rutas.post('/restablecer', async (req, res) => {
+  const password = String(req.body.password || '');
+  // Se comprueba antes de gastar el token, para poder corregirla con el mismo enlace.
+  if (password.length < MINIMO_CONTRASENA) throw peticionIncorrecta('La contraseña tiene que tener al menos 8 caracteres');
+  const usuarioId = await consumirToken(req.body.token, TIPOS_TOKEN.RECUPERAR_CONTRASENA);
+  if (!usuarioId) throw enlaceNoValido();
+  // Ha demostrado que el email es suyo, así que también queda verificado.
+  await db.query(
+    'UPDATE usuarios SET password_hash = $2, email_verificado = true WHERE id = $1',
+    [usuarioId, await cifrarContrasena(password)],
+  );
+  iniciarSesion(res, usuarioId);
+  res.json(await obtenerUsuario(usuarioId));
+});
+
+// RF-06. Busca la cuenta por google_id; si no, por email (solo si Google lo da por verificado);
+// si no existe, la crea ya verificada. Devuelve { id, nuevo }.
+export async function entrarConGoogle({ googleId, email, emailVerificado, nombre }) {
+  if (!googleId || !emailValido(email)) throw peticionIncorrecta('Google no ha devuelto un email válido');
+  const porGoogle = await db.query('SELECT id FROM usuarios WHERE google_id = $1', [googleId]);
+  if (porGoogle.rows[0]) return { id: porGoogle.rows[0].id, nuevo: false };
+
+  const porEmail = await db.query('SELECT id FROM usuarios WHERE email = $1', [email]);
+  if (porEmail.rows[0]) {
+    if (!emailVerificado) throw conflicto('Ya hay una cuenta con ese email. Entra con tu contraseña.');
+    await db.query('UPDATE usuarios SET google_id = $2, email_verificado = true WHERE id = $1', [porEmail.rows[0].id, googleId]);
+    return { id: porEmail.rows[0].id, nuevo: false };
+  }
+
+  const id = await crearUsuario({ nombre: nombre || email.split('@')[0], email, googleId, verificado: emailVerificado });
+  if (!emailVerificado) await mandarVerificacion(id);
+  return { id, nuevo: true };
+}
+
+rutas.get('/google', async (req, res) => {
+  if (!googleConfigurado()) throw new ErrorHttp(503, 'El acceso con Google no está configurado', { codigo: 'google_no_configurado' });
+  const estado = crypto.randomBytes(16).toString('hex');
+  res.cookie(COOKIE_GOOGLE, JSON.stringify({ estado, volver: rutaInterna(req.query.volver) }), {
+    httpOnly: true, sameSite: 'lax', secure: config.produccion, maxAge: 10 * 60 * 1000,
+  });
+  res.redirect(await urlConsentimiento(estado));
+});
+
+rutas.get('/google/callback', async (req, res) => {
+  let guardado = {};
+  try { guardado = JSON.parse(req.cookies?.[COOKIE_GOOGLE] || '{}'); } catch { /* cookie rota */ }
+  res.clearCookie(COOKIE_GOOGLE);
+
+  const { code, state } = req.query;
+  if (!googleConfigurado() || !code || !guardado.estado || state !== guardado.estado) {
+    return res.redirect('/entrar?error=google');
+  }
+  try {
+    const { id, nuevo } = await entrarConGoogle(await datosDeGoogle(String(code)));
+    iniciarSesion(res, id);
+    res.redirect(nuevo ? '/app/perfil?nuevo=1' : rutaInterna(guardado.volver));
+  } catch (error) {
+    if (!(error instanceof ErrorHttp)) console.error('Error al entrar con Google:', error.message);
+    res.redirect(`/entrar?error=${error.estado === 409 ? 'google_email' : 'google'}`);
+  }
+});
 rutas.delete('/cuenta', requiereSesion, () => { throw pendiente('#27'); });
 
 export default rutas;
