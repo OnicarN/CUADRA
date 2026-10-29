@@ -7,31 +7,44 @@ Cada persona es responsable de unos módulos **completos** (su API, sus pantalla
 | Tema | Entrada de facturas e infraestructura | Facturas, revisión, avisos y panel | Cuenta, perfil, planes e informes |
 | Migraciones | `100-199` | `200-299` | `300-399` |
 
-## Issues y orden recomendado
+## Orden de las tareas
 
-Cada uno puede empezar ya con su primera issue: no depende de nadie. El orden es el recomendado, no obligatorio.
+Las tareas van **en este orden** porque unas necesitan lo que hacen otras. Regla:
 
-**Dani**
-1. [#12](https://github.com/OnicarN/CUADRA/issues/12) Subida de facturas (RF-13 a 17, 23)
-2. [#13](https://github.com/OnicarN/CUADRA/issues/13) Lectura automática con IA (RF-24 a 29)
-3. [#14](https://github.com/OnicarN/CUADRA/issues/14) Correo propio de Cuadra (RF-18 a 21)
-4. [#15](https://github.com/OnicarN/CUADRA/issues/15) App instalable y compartir (RF-22)
-5. [#16](https://github.com/OnicarN/CUADRA/issues/16) Google Calendar (RF-54 a 56)
-6. [#17](https://github.com/OnicarN/CUADRA/issues/17) Despliegue en Render + Neon (en cuanto se fusione la base)
+- Una tarea puede empezar cuando **todas las de su columna "Necesita" están fusionadas** en `master`.
+- Cada uno coge **su siguiente tarea de la lista** en cuanto se cumpla eso. Puede que dos personas trabajen a la vez, pero nunca en algo que dependa de una tarea sin fusionar.
+- Una PR de una tarea que se adelanta a su turno se queda en espera hasta que se fusionen las que necesita.
 
-**Rodrigo**
-1. [#18](https://github.com/OnicarN/CUADRA/issues/18) Histórico, búsqueda y filtros (RF-37 a 39)
-2. [#19](https://github.com/OnicarN/CUADRA/issues/19) Pantalla de revisión (RF-30 a 34)
-3. [#20](https://github.com/OnicarN/CUADRA/issues/20) Comprobaciones y duplicados (RF-27, 28, 35, 36)
-4. [#21](https://github.com/OnicarN/CUADRA/issues/21) Avisos (RF-40 a 42)
-5. [#22](https://github.com/OnicarN/CUADRA/issues/22) Panel (RF-43 a 48)
+| Paso | Quién | Issue | Necesita | Estado |
+| --- | --- | --- | --- | --- |
+| 0 | Ana | [#24](https://github.com/OnicarN/CUADRA/issues/24) Perfil fiscal y ajustes | — | ✅ Hecha |
+| 1 | Dani | [#17](https://github.com/OnicarN/CUADRA/issues/17) Publicar en Render + Neon | — | En curso |
+| 2 | Dani | [#12](https://github.com/OnicarN/CUADRA/issues/12) Subida de facturas | #24 | |
+| 3 | Rodrigo | [#18](https://github.com/OnicarN/CUADRA/issues/18) Histórico, búsqueda y filtros | #12 | PR #32 en espera |
+| 4 | Ana | [#23](https://github.com/OnicarN/CUADRA/issues/23) Cuenta: verificación, recuperación y Google | — | |
+| 5 | Dani | [#13](https://github.com/OnicarN/CUADRA/issues/13) Lectura automática con IA | #12 | |
+| 6 | Rodrigo | [#19](https://github.com/OnicarN/CUADRA/issues/19) Pantalla de revisión | #18, #13 | |
+| 7 | Rodrigo | [#20](https://github.com/OnicarN/CUADRA/issues/20) Comprobaciones y duplicados | #19 | |
+| 8 | Ana | [#25](https://github.com/OnicarN/CUADRA/issues/25) Excel e informe trimestral | #19 | |
+| 9 | Rodrigo | [#22](https://github.com/OnicarN/CUADRA/issues/22) Panel con cifras | #19 | |
+| 10 | Dani | [#14](https://github.com/OnicarN/CUADRA/issues/14) Correo propio de Cuadra | #12 | |
+| 11 | Rodrigo | [#21](https://github.com/OnicarN/CUADRA/issues/21) Avisos | #20 | |
+| 12 | Ana | [#26](https://github.com/OnicarN/CUADRA/issues/26) Suscripción y pagos | #13 | |
+| 13 | Dani | [#15](https://github.com/OnicarN/CUADRA/issues/15) App instalable y compartir | #12 | |
+| 14 | Dani | [#16](https://github.com/OnicarN/CUADRA/issues/16) Google Calendar | #19, #23 | |
+| 15 | Ana | [#27](https://github.com/OnicarN/CUADRA/issues/27) Eliminar cuenta | #23, #25 | |
 
-**Ana**
-1. [#23](https://github.com/OnicarN/CUADRA/issues/23) Cuenta: verificación, recuperación y Google (RF-05 a 08)
-2. [#24](https://github.com/OnicarN/CUADRA/issues/24) Perfil fiscal y ajustes (RF-10 a 12, 19, 41, 42)
-3. [#25](https://github.com/OnicarN/CUADRA/issues/25) Excel e informe trimestral (RF-49 a 53)
-4. [#26](https://github.com/OnicarN/CUADRA/issues/26) Suscripción y pagos (RF-57 a 61)
-5. [#27](https://github.com/OnicarN/CUADRA/issues/27) Eliminar cuenta (RF-62)
+Por qué este orden:
+
+- **#12 Subida** va pronto porque sin facturas reales no se puede probar casi nada.
+- **#18 Histórico** necesita facturas subidas para verlas; **#19 Revisión** necesita el histórico (abrir el original) y la lectura (datos que revisar).
+- **#20, #22 y #25** trabajan con facturas confirmadas, que salen de la revisión.
+- **#21 Avisos** muestra lo que generan las comprobaciones.
+- **#26 Suscripción** vuelve a lanzar la lectura al comprar lecturas extra.
+- **#16 Calendar** pinta su sugerencia en la revisión y comparte el acceso de Google con #23.
+- **#27 Eliminar cuenta** reutiliza el acceso (#23) y la exportación (#25).
+
+Si la línea "Orden" de una issue no coincide con esta tabla, manda esta tabla.
 
 Ya hecho en la base: web pública (RF-01 a 04), registro y acceso con email (RF-05, RF-09), esquema completo de la base de datos, sistema de diseño, idioma es/en, modo claro/oscuro, menú de la app y datos de prueba.
 
