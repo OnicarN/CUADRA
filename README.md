@@ -4,6 +4,8 @@ Web para autónomos que lee sola sus tickets y facturas y les avisa de lo que es
 
 > Lo que no se guarda no se deduce, y lo que no se deduce se paga.
 
+**Web publicada:** _pendiente del primer despliegue (ver [docs/DESPLIEGUE.md](docs/DESPLIEGUE.md))_
+
 ## Arrancar en local
 
 Necesitas [Node.js](https://nodejs.org) 20 o superior. Nada más: la base de datos (PGlite) va incluida.
