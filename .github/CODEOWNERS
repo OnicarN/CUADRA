@@ -1,0 +1,64 @@
+# Quién es responsable de cada parte. GitHub le pide revisión automáticamente
+# cuando una PR toca sus archivos. Ver docs/REPARTO.md.
+
+# Compartido (base): Dani
+*                                   @OnicarN
+
+# Dani: subida, lectura con IA, correo, calendario, PWA y despliegue
+/backend/src/modulos/subida/        @OnicarN
+/backend/src/modulos/lectura/       @OnicarN
+/backend/src/modulos/correo/        @OnicarN
+/backend/src/modulos/calendario/    @OnicarN
+/frontend/app/subir.html            @OnicarN
+/frontend/app/calendario.html       @OnicarN
+/frontend/js/paginas/subir.js       @OnicarN
+/frontend/js/paginas/calendario.js  @OnicarN
+/frontend/js/componentes/sugerencia-evento.js @OnicarN
+
+# Rodrigo: facturas, revisión, comprobaciones, avisos y panel
+/backend/src/modulos/facturas/      @rodrigoadelcano
+/backend/src/modulos/categorias/    @rodrigoadelcano
+/backend/src/modulos/avisos/        @rodrigoadelcano
+/backend/src/modulos/panel/         @rodrigoadelcano
+/frontend/app/panel.html            @rodrigoadelcano
+/frontend/app/facturas.html         @rodrigoadelcano
+/frontend/app/factura.html          @rodrigoadelcano
+/frontend/app/avisos.html           @rodrigoadelcano
+/frontend/js/paginas/panel.js       @rodrigoadelcano
+/frontend/js/paginas/facturas.js    @rodrigoadelcano
+/frontend/js/paginas/factura.js     @rodrigoadelcano
+/frontend/js/paginas/avisos.js      @rodrigoadelcano
+/frontend/css/paginas/panel.css     @rodrigoadelcano
+/frontend/css/paginas/facturas.css  @rodrigoadelcano
+/frontend/css/paginas/factura.css   @rodrigoadelcano
+/frontend/css/paginas/avisos.css    @rodrigoadelcano
+
+# Ana: cuenta, perfil, ajustes, suscripción, baja y exportación
+/backend/src/modulos/auth/          @miegomez2689-art
+/backend/src/modulos/perfil/        @miegomez2689-art
+/backend/src/modulos/suscripcion/   @miegomez2689-art
+/backend/src/modulos/exportacion/   @miegomez2689-art
+/frontend/entrar.html               @miegomez2689-art
+/frontend/registro.html             @miegomez2689-art
+/frontend/recuperar.html            @miegomez2689-art
+/frontend/restablecer.html          @miegomez2689-art
+/frontend/verificar.html            @miegomez2689-art
+/frontend/app/perfil.html           @miegomez2689-art
+/frontend/app/ajustes.html          @miegomez2689-art
+/frontend/app/suscripcion.html      @miegomez2689-art
+/frontend/app/informes.html         @miegomez2689-art
+/frontend/js/paginas/acceso-textos.js @miegomez2689-art
+/frontend/js/paginas/entrar.js      @miegomez2689-art
+/frontend/js/paginas/registro.js    @miegomez2689-art
+/frontend/js/paginas/recuperar.js   @miegomez2689-art
+/frontend/js/paginas/restablecer.js @miegomez2689-art
+/frontend/js/paginas/verificar.js   @miegomez2689-art
+/frontend/js/paginas/perfil.js      @miegomez2689-art
+/frontend/js/paginas/ajustes.js     @miegomez2689-art
+/frontend/js/paginas/suscripcion.js @miegomez2689-art
+/frontend/js/paginas/informes.js    @miegomez2689-art
+/frontend/css/paginas/acceso.css    @miegomez2689-art
+/frontend/css/paginas/perfil.css    @miegomez2689-art
+/frontend/css/paginas/ajustes.css   @miegomez2689-art
+/frontend/css/paginas/suscripcion.css @miegomez2689-art
+/frontend/css/paginas/informes.css  @miegomez2689-art

@@ -1,0 +1,5 @@
+# Finales de línea LF para todos, también en Windows. Evita conflictos falsos en archivos enteros.
+* text=auto eol=lf
+*.png binary
+*.jpg binary
+*.pdf binary
