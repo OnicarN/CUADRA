@@ -5,3 +5,20 @@
 .correo-cuadra code { font-family: inherit; font-weight: 600; word-break: break-all; }
 .perfil-enlaces .fila-icono { background: var(--gris-suave); }
 .perfil-enlaces .banner-flecha { width: 20px; height: 20px; color: var(--texto-2); }
+.perfil-intro { margin: var(--e-1) 0 var(--e-4); }
+.perfil-subtitulo { font-size: 16px; font-weight: 600; margin-top: var(--e-6); }
+.perfil-listo { display: flex; flex-direction: column; gap: var(--e-3); padding: var(--e-4); border-radius: var(--radio-campo); background: var(--verde-suave); }
+.perfil-listo p { display: flex; align-items: center; gap: var(--e-2); font-weight: 600; }
+.perfil-listo p svg { width: 20px; height: 20px; color: var(--verde); }
+#lista-confianza { margin-top: var(--e-2); }
+#lista-confianza .boton-icono { flex: none; }
+.perfil-confianza-form { margin-top: var(--e-3); }
+.perfil-confianza-fila { display: flex; gap: var(--e-2); }
+.perfil-confianza-fila input { flex: 1; min-width: 0; }
+.perfil-confianza-fila .boton { flex: none; }
+
+@media (min-width: 768px) {
+  #form-fiscal { max-width: 560px; }
+  #form-fiscal > .boton { align-self: flex-start; }
+  .perfil-listo { flex-direction: row; align-items: center; justify-content: space-between; }
+}

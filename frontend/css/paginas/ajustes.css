@@ -1,1 +1,32 @@
 /* Ajustes (RF-04, RF-41, RF-42). Responsable: Ana (#24) */
+.ajustes-texto { margin: var(--e-1) 0 var(--e-4); }
+
+/* Selector de idioma y tema: pestañas en píldora con zona táctil de 44 px */
+.ajustes-selector { display: flex; width: 100%; }
+.ajustes-selector .pestana { flex: 1; justify-content: center; min-height: 44px; }
+.ajustes-selector .pestana[aria-pressed="true"] { background: var(--tarjeta); color: var(--texto); box-shadow: var(--sombra); }
+
+.ajustes-dias { display: flex; align-items: center; gap: var(--e-3); }
+.campo .ajustes-dias input { width: 96px; font-variant-numeric: tabular-nums; }
+
+/* Interruptor "Recibir por email" */
+.ajustes-interruptor { display: flex; align-items: center; gap: var(--e-3); width: 100%; min-height: 44px; cursor: pointer; }
+.ajustes-interruptor input {
+  appearance: none; flex: none; position: relative; margin: 0; cursor: pointer;
+  width: 48px; height: 28px; border-radius: var(--pildora);
+  background: var(--borde); transition: background-color .15s;
+}
+.ajustes-interruptor input::after {
+  content: ''; position: absolute; top: 3px; left: 3px; width: 22px; height: 22px;
+  border-radius: 50%; background: var(--tarjeta); box-shadow: 0 1px 2px rgba(0, 0, 0, .2); transition: transform .15s;
+}
+.ajustes-interruptor input:checked { background: var(--acento); }
+.ajustes-interruptor input:checked::after { transform: translateX(20px); }
+.ajustes-interruptor input:focus-visible { outline: 2px solid var(--acento); outline-offset: 2px; }
+
+@media (min-width: 768px) {
+  .ajustes-selector { display: inline-flex; width: auto; }
+  .ajustes-selector .pestana { flex: none; }
+  #form-avisos { max-width: 560px; }
+  #form-avisos > .boton { align-self: flex-start; }
+}
