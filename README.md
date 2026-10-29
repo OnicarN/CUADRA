@@ -8,6 +8,10 @@ Web para autónomos que lee sola sus tickets y facturas y les avisa de lo que es
 
 Necesitas [Node.js](https://nodejs.org) 20 o superior. Nada más: la base de datos (PGlite) va incluida.
 
+**En Windows, lo fácil:** doble clic en `arrancar.bat`. La primera vez instala todo y carga los datos de prueba; luego abre http://localhost:3000 sola. Para pararla, cierra la ventana.
+
+A mano (o en Mac/Linux):
+
 ```bash
 cd backend
 npm install
