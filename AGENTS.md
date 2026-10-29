@@ -85,7 +85,7 @@ Somos tres (Dani, Rodrigo y Ana) y cada archivo tiene un único responsable (ver
 
 ## Flujo de trabajo (obligatorio)
 
-1. Antes de empezar: `git checkout master` y `git pull`.
+1. Antes de empezar: `git checkout master` y `git pull`. Mira la tabla "Orden de las tareas" de `docs/REPARTO.md`: si alguna issue de la columna "Necesita" no está cerrada, **no empieces**; díselo a la persona y dile cuál toca esperar.
 2. Crea una rama por issue: `issue-N-descripcion-corta` (por ejemplo `issue-14-pantalla-subida`).
 3. Nunca hagas commit ni push directo a `master`.
 4. Commits pequeños con mensajes claros en español.
