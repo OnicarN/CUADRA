@@ -5,6 +5,7 @@ import { iniciarPagina, actualizarContadorAvisos } from '../core/layout.js';
 import { api } from '../core/api.js';
 import { t } from '../core/i18n.js';
 import { icono } from '../core/iconos.js';
+import { dinero } from '../core/formato.js';
 import { html, seguro, mostrarToast, etiquetaEstado } from '../core/ui.js';
 
 const textos = {
@@ -29,7 +30,12 @@ const textos = {
     'subir.lista.verTodas': 'Ver mis facturas',
     'subir.lista.revisar': 'Revisar',
     'subir.estado.subiendo': 'Subiendo…',
-    'subir.estado.pendiente': 'Cuadra la está leyendo. Revísala cuando quieras.',
+    'subir.estado.leyendo': 'Leyendo…',
+    'subir.estado.leyendoTexto': 'Cuadra está leyendo los datos de la factura.',
+    'subir.estado.leida': 'Leída: {datos}. Revísala y confírmala.',
+    'subir.estado.leidaSinDatos': 'Leída. Revísala y confírmala.',
+    'subir.estado.sinDatos': 'No hemos podido leerla. Rellena los datos al revisarla.',
+    'subir.estado.tarda': 'Está tardando más de lo normal. La verás en tus facturas cuando termine.',
     'subir.estado.sinLeer': 'Guardada. Se leerá cuando amplíes tu plan o empiece el mes.',
     'subir.estado.error': 'Error',
     'subir.error.formato': 'Formato no admitido. Sube un PDF o una imagen (JPG, PNG o HEIC).',
@@ -58,7 +64,12 @@ const textos = {
     'subir.lista.verTodas': 'See my invoices',
     'subir.lista.revisar': 'Review',
     'subir.estado.subiendo': 'Uploading…',
-    'subir.estado.pendiente': 'Cuadra is reading it. Review it whenever you like.',
+    'subir.estado.leyendo': 'Reading…',
+    'subir.estado.leyendoTexto': 'Cuadra is reading the invoice data.',
+    'subir.estado.leida': 'Read: {datos}. Review and confirm it.',
+    'subir.estado.leidaSinDatos': 'Read. Review and confirm it.',
+    'subir.estado.sinDatos': "We couldn't read it. Fill in the data when you review it.",
+    'subir.estado.tarda': "It's taking longer than usual. You'll see it in your invoices when it's done.",
     'subir.estado.sinLeer': 'Saved. It will be read when you upgrade your plan or the month starts.',
     'subir.estado.error': 'Error',
     'subir.error.formato': 'Format not supported. Upload a PDF or an image (JPG, PNG or HEIC).',
@@ -149,29 +160,58 @@ function tamano(bytes) {
   return bytes < 1024 * 1024 ? `${Math.max(1, Math.round(bytes / 1024))} KB` : `${(bytes / 1024 / 1024).toFixed(1)} MB`;
 }
 
-function pintarFila(fila, archivo, { estado, id, error }) {
+function pintarFila(fila, archivo, { estado, id, error, emisor, total, moneda }) {
+  const leidos = [emisor, total !== null && total !== undefined ? dinero(total, moneda || 'EUR') : null].filter(Boolean).join(' · ');
   const etiqueta = {
     subiendo: html`<span class="etiqueta etiqueta-sin-leer">${t('subir.estado.subiendo')}</span>`,
-    pendiente: etiquetaEstado('pendiente'),
+    leyendo: html`<span class="etiqueta etiqueta-pendiente">${t('subir.estado.leyendo')}</span>`,
+    leida: etiquetaEstado('pendiente'),
+    sin_datos: etiquetaEstado('pendiente'),
+    tarda: etiquetaEstado('pendiente'),
     sin_leer: etiquetaEstado('sin_leer'),
+    confirmada: etiquetaEstado('confirmada'),
     error: html`<span class="etiqueta etiqueta-aviso">${t('subir.estado.error')}</span>`,
   }[estado];
   const detalle = {
     subiendo: tamano(archivo.size),
-    pendiente: t('subir.estado.pendiente'),
+    leyendo: t('subir.estado.leyendoTexto'),
+    leida: leidos ? t('subir.estado.leida', { datos: leidos }) : t('subir.estado.leidaSinDatos'),
+    sin_datos: t('subir.estado.sinDatos'),
+    tarda: t('subir.estado.tarda'),
     sin_leer: t('subir.estado.sinLeer'),
+    confirmada: leidos,
     error,
   }[estado];
+  const cargando = estado === 'subiendo' || estado === 'leyendo';
   fila.innerHTML = html`
     <span class="fila-icono">${seguro(icono(estado === 'error' ? 'alerta' : 'archivo'))}</span>
     <span class="fila-centro">
       <span class="fila-titulo">${archivo.name}</span>
       <span class="fila-sub">${detalle}</span>
+      ${cargando ? seguro('<span class="progreso progreso-cargando" role="progressbar" aria-busy="true"><span></span></span>') : ''}
     </span>
     <span class="fila-derecha">
       ${seguro(etiqueta)}
-      ${id ? seguro(html`<a class="boton-texto subida-revisar" href="/app/factura?id=${id}">${t('subir.lista.revisar')}</a>`) : ''}
+      ${id && !cargando ? seguro(html`<a class="boton-texto subida-revisar" href="/app/factura?id=${id}">${t('subir.lista.revisar')}</a>`) : ''}
     </span>`;
+}
+
+// Pregunta cada 2 segundos cómo va la lectura hasta que termina (máximo 2 minutos).
+async function seguirLectura(fila, archivo, id) {
+  const limite = Date.now() + 2 * 60 * 1000;
+  while (Date.now() < limite) {
+    await new Promise((resolve) => setTimeout(resolve, 2000));
+    try {
+      const lectura = await api(`/subida/${id}/estado`);
+      if (lectura.estado !== 'leyendo') {
+        pintarFila(fila, archivo, { ...lectura, id });
+        if (lectura.estado === 'sin_leer') document.getElementById('aviso-limite').hidden = false;
+        actualizarContadorAvisos();
+        return;
+      }
+    } catch { /* fallo puntual de red: lo volvemos a intentar */ }
+  }
+  pintarFila(fila, archivo, { estado: 'tarda', id });
 }
 
 function validar(archivo) {
@@ -204,6 +244,9 @@ async function subirArchivos(archivos, origen = 'subida') {
       const [resultado] = await api('/subida', { metodo: 'POST', formulario });
       if (resultado.estado === 'rechazado') {
         pintarFila(fila, archivo, { estado: 'error', error: resultado.error });
+      } else if (resultado.estado === 'pendiente') {
+        pintarFila(fila, archivo, { estado: 'leyendo', id: resultado.id });
+        seguirLectura(fila, archivo, resultado.id);
       } else {
         pintarFila(fila, archivo, resultado);
         if (resultado.estado === 'sin_leer') document.getElementById('aviso-limite').hidden = false;

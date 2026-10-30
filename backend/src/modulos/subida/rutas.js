@@ -6,10 +6,13 @@
 //                    estado: 'pendiente' (se está leyendo), 'sin_leer' (límite del plan) o
 //                    'rechazado' (con su motivo en `error`; el resto de archivos sí se sube)
 //                 409 { error, codigo: 'perfil_incompleto' } si no hay perfil fiscal (RF-10)
+// GET  /:id/estado  cómo va la lectura de una factura recién subida
+//                 -> { estado: 'leyendo' | 'leida' | 'sin_datos' | 'sin_leer' | 'confirmada', emisor, total, moneda, motivo }
 import { Router } from 'express';
 import multer from 'multer';
 import { requiereSesion } from '../../core/auth.js';
-import { peticionIncorrecta, ErrorHttp } from '../../core/errores.js';
+import { peticionIncorrecta, noEncontrado, ErrorHttp } from '../../core/errores.js';
+import { db } from '../../core/db.js';
 import { obtenerPerfil } from '../perfil/servicio.js';
 import { crearFacturaDesdeArchivo, TAMANO_MAXIMO } from './servicio.js';
 
@@ -44,6 +47,22 @@ rutas.post('/', subida.array('archivos', MAXIMO_ARCHIVOS), async (req, res) => {
     }
   }
   res.status(201).json(resultado);
+});
+
+rutas.get('/:id/estado', async (req, res) => {
+  const id = Number(req.params.id);
+  if (!Number.isInteger(id)) throw noEncontrado('Factura no encontrada');
+  const { rows: [f] } = await db.query(
+    'SELECT estado, emisor, total, moneda, datos_ia FROM facturas WHERE id = $1 AND usuario_id = $2',
+    [id, req.usuario.id],
+  );
+  if (!f) throw noEncontrado('Factura no encontrada');
+  let estado = f.estado;
+  if (f.estado === 'pendiente') {
+    if (!f.datos_ia) estado = 'leyendo';
+    else estado = f.datos_ia.motivo ? 'sin_datos' : 'leida';
+  }
+  res.json({ estado, emisor: f.emisor, total: f.total, moneda: f.moneda, motivo: f.datos_ia?.motivo ?? null });
 });
 
 // Errores de multer (archivo demasiado grande, demasiados archivos) con un mensaje claro.

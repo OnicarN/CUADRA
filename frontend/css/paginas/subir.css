@@ -51,3 +51,14 @@
 /* Lista de subidas */
 .subida-revisar { display: inline-block; margin-top: var(--e-1); font-size: 14px; }
 #lista .fila-derecha { display: flex; flex-direction: column; align-items: flex-end; flex: none; }
+
+/* Barra de carga mientras se sube o se lee una factura */
+.progreso-cargando { display: block; margin-top: var(--e-2); max-width: 240px; height: 6px; }
+.progreso-cargando > span { width: 35%; animation: cargando 1.2s ease-in-out infinite; }
+@keyframes cargando {
+  from { transform: translateX(-100%); }
+  to { transform: translateX(290%); }
+}
+@media (prefers-reduced-motion: reduce) {
+  .progreso-cargando > span { animation: none; width: 100%; opacity: .4; }
+}
