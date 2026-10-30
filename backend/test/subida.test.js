@@ -116,3 +116,27 @@ test('sin archivos responde 400', async () => {
   const { estado } = await subir(cookie, []);
   assert.equal(estado, 400);
 });
+
+test('estado de la lectura de una factura subida', async () => {
+  const { id, cookie } = await crearUsuario('estado@prueba.es');
+  const otro = await crearUsuario('otro-estado@prueba.es');
+  const { datos } = await subir(cookie, [['a.pdf', PDF]]);
+  const facturaId = datos[0].id;
+  const pedir = async (cookieUsada) => {
+    const r = await fetch(`${servidor.url}/api/subida/${facturaId}/estado`, { headers: { cookie: cookieUsada } });
+    return { estado: r.status, datos: await r.json() };
+  };
+
+  await db.query("UPDATE facturas SET estado = 'pendiente', datos_ia = NULL WHERE id = $1", [facturaId]);
+  assert.equal((await pedir(cookie)).datos.estado, 'leyendo');
+
+  await db.query(`UPDATE facturas SET datos_ia = '{"lectura":{}}', emisor = 'Bar', total = 3 WHERE id = $1`, [facturaId]);
+  assert.deepEqual((await pedir(cookie)).datos, { estado: 'leida', emisor: 'Bar', total: 3, moneda: 'EUR', motivo: null });
+
+  await db.query(`UPDATE facturas SET datos_ia = '{"motivo":"sin_clave_api"}' WHERE id = $1`, [facturaId]);
+  assert.equal((await pedir(cookie)).datos.estado, 'sin_datos');
+
+  // Nadie ve el estado de las facturas de otro (RF-09).
+  assert.equal((await pedir(otro.cookie)).estado, 404);
+  assert.ok(id);
+});
