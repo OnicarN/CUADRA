@@ -341,6 +341,13 @@ h1, h2, h3, h4, p { margin: 0; }
 .web-nav-enlace:hover, .web-nav-enlace[aria-current="page"] { color: var(--texto); }
 .web-pie { border-top: 1px solid var(--borde); padding: var(--e-8) 0; margin-top: var(--e-12); }
 .web-pie-fila { display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: var(--e-4); }
+.web-pie-nav { display: flex; flex-wrap: wrap; align-items: center; gap: var(--e-2); }
+.web-pie-nav .web-nav-enlace { display: inline-flex; align-items: center; min-height: 44px; }
+/* En móvil el pie se apila: logo, enlaces y copyright, centrados. */
+@media (max-width: 599px) {
+  .web-pie-fila { flex-direction: column; text-align: center; }
+  .web-pie-nav { justify-content: center; }
+}
 @media (max-width: 599px) { .web-cabecera .ocultar-movil { display: none; } }
 
 .selector-idioma {

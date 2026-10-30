@@ -142,8 +142,9 @@ function pintarWeb(usuario, pagina) {
   pie.innerHTML = `
     <div class="contenedor web-pie-fila">
       <a class="logo" href="/">${logo()}<span class="logo-nombre">Cuadra</span></a>
-      <nav class="web-nav" style="margin-left:0">
-        <a class="web-nav-enlace" href="/precios" data-t="nav.precios"></a>
+      <nav class="web-pie-nav">
+        <a class="web-nav-enlace" href="/precios" ${actual('precios')} data-t="nav.precios"></a>
+        <a class="web-nav-enlace" href="/privacidad" ${actual('privacidad')} data-t="pie.privacidad"></a>
         <a class="web-nav-enlace" href="mailto:hola@cuadra.app" data-t="pie.contacto"></a>
       </nav>
       <p class="texto-2" data-t="pie.derechos"></p>
