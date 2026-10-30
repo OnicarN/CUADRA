@@ -62,3 +62,11 @@
 @media (prefers-reduced-motion: reduce) {
   .progreso-cargando > span { animation: none; width: 100%; opacity: .4; }
 }
+
+/* Instalar en el móvil (#15) */
+.instalar { display: flex; flex-wrap: wrap; align-items: center; gap: var(--e-4); }
+.instalar .zona-icono { width: 48px; height: 48px; flex: none; }
+.instalar .zona-icono svg { width: 24px; height: 24px; }
+.instalar-texto { flex: 1; min-width: 200px; }
+.instalar-texto .texto-2 { margin-top: var(--e-1); }
+@media (max-width: 480px) { .instalar .boton { width: 100%; } }
