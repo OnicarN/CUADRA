@@ -1,1 +1,66 @@
 /* Panel (RF-43 a RF-48). Responsable: Rodrigo (#22) */
+
+/* ---------- Periodo: pestañas y flechas ---------- */
+.panel-periodo { display: flex; flex-wrap: wrap; align-items: center; gap: var(--e-3); }
+.panel-periodo .pestana { min-height: 44px; }
+.panel-navegar { display: flex; align-items: center; gap: var(--e-2); }
+.panel-navegar .boton-icono:disabled { opacity: .35; cursor: default; }
+.panel-etiqueta { min-width: 9.5em; text-align: center; font-weight: 600; font-variant-numeric: tabular-nums; }
+@media (max-width: 599px) {
+  .panel-periodo { width: 100%; }
+  .panel-periodo .pestanas { display: flex; width: 100%; }
+  .panel-periodo .pestana { flex: 1; justify-content: center; }
+  .panel-navegar { width: 100%; justify-content: space-between; }
+}
+
+.panel-banners { margin-bottom: var(--hueco); }
+.panel-banners:empty { display: none; }
+
+/* ---------- Cifras: 1 columna en móvil estrecho, 2 en móvil y tablet, 4 en ordenador ---------- */
+.panel-cifras { display: grid; gap: var(--hueco); grid-template-columns: 1fr; margin-bottom: var(--hueco); }
+@media (min-width: 420px) { .panel-cifras { grid-template-columns: repeat(2, 1fr); } }
+@media (min-width: 1024px) { .panel-cifras { grid-template-columns: repeat(4, 1fr); } }
+@media (min-width: 420px) and (max-width: 1023px) { .panel-cifra-principal { grid-column: 1 / -1; } }
+.panel-cifra { display: flex; flex-direction: column; min-width: 0; }
+.panel-cifra .cifra { font-size: 28px; overflow-wrap: anywhere; }
+.panel-cifra-principal .cifra { font-size: 36px; }
+@media (min-width: 1024px) {
+  .panel-cifra .cifra { font-size: 32px; }
+  .panel-cifra-principal .cifra { font-size: 40px; }
+}
+.panel-cifra .tarjeta-apoyo { margin-top: auto; padding-top: var(--e-1); }
+.panel-cifra .boton-texto { font-weight: 500; }
+
+/* ---------- Gráfico por categoría y gastos recientes ---------- */
+.panel-bloques { display: grid; gap: var(--hueco); grid-template-columns: 1fr; margin-bottom: var(--hueco); align-items: start; }
+@media (min-width: 1024px) { .panel-bloques { grid-template-columns: minmax(0, 3fr) minmax(0, 2fr); } }
+.panel-categorias .titulo-seccion { margin-bottom: var(--e-4); }
+
+.panel-barras { list-style: none; margin: 0; padding: 0; display: flex; flex-direction: column; gap: var(--e-1); }
+.panel-barra {
+  position: relative; display: grid; align-items: center; gap: var(--e-1) var(--e-3);
+  grid-template-columns: minmax(0, 1fr) auto; grid-template-areas: "nombre valor" "pista pista";
+  padding: var(--e-2); margin: 0 calc(-1 * var(--e-2)); border-radius: var(--radio-campo);
+  color: inherit; text-decoration: none; min-height: 44px;
+}
+@media (min-width: 768px) {
+  .panel-barra { grid-template-columns: minmax(8em, 13em) minmax(0, 1fr) auto; grid-template-areas: "nombre pista valor"; }
+}
+.panel-barra:hover, .panel-barra:focus-visible { background: var(--gris-suave); }
+.panel-barra-nombre { grid-area: nombre; font-size: 14px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.panel-barra-valor { grid-area: valor; font-size: 14px; font-weight: 600; text-align: right; }
+.panel-barra-pista { grid-area: pista; height: 8px; border-radius: var(--pildora); background: var(--gris-suave); overflow: hidden; }
+.panel-barra:hover .panel-barra-pista, .panel-barra:focus-visible .panel-barra-pista { background: var(--tarjeta); }
+.panel-barra-relleno { display: block; height: 100%; background: var(--acento); border-radius: 0 4px 4px 0; }
+
+/* Tooltip oscuro (documento de diseño: gráficos). Sale al pasar el ratón o con el foco. */
+.panel-tooltip {
+  position: absolute; z-index: 5; right: var(--e-2); bottom: calc(100% - 2px);
+  padding: var(--e-2) var(--e-3); border-radius: var(--radio-campo);
+  background: var(--tooltip); color: var(--fondo); font-size: 13px; line-height: 1.4;
+  white-space: nowrap; pointer-events: none; font-variant-numeric: tabular-nums;
+  opacity: 0; transform: translateY(4px); transition: opacity .12s, transform .12s;
+}
+.panel-barra:hover .panel-tooltip, .panel-barra:focus-visible .panel-tooltip { opacity: 1; transform: none; }
+@media (hover: none) { .panel-tooltip { display: none; } }
+@media (prefers-reduced-motion: reduce) { .panel-tooltip { transition: none; } }
