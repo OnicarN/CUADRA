@@ -9,15 +9,16 @@
 // POST   /:id/reabrir      vuelve a pendiente y registra el cambio                   RF-33 (hecho)
 // DELETE /:id              solo si está pendiente o sin leer                         RF-34 (hecho)
 // GET    /:id/original     el archivo original (?descargar=1 para descargar)         RF-39 (hecho)
-// POST   /:id/duplicado    { accion: 'descartar' | 'guardar' }                       RF-36
+// POST   /:id/duplicado    { accion: 'descartar' | 'guardar' }                       RF-36 (hecho)
 //
 // Todas las consultas filtran por req.usuario.id (RF-09).
 import { Router } from 'express';
 import { requiereSesion } from '../../core/auth.js';
 import { aBuffer } from '../../core/db.js';
-import { pendiente, peticionIncorrecta, noEncontrado } from '../../core/errores.js';
+import { peticionIncorrecta, noEncontrado } from '../../core/errores.js';
 import { FORMATOS } from '../subida/servicio.js';
 import { listarFacturas, obtenerOriginal } from './consultas.js';
+import { resolverDuplicado } from './comprobaciones.js';
 import { obtenerFactura, editarFactura, confirmarFactura, reabrirFactura, borrarFactura } from './revision.js';
 
 const rutas = Router();
@@ -68,6 +69,8 @@ rutas.get('/:id/original', async (req, res) => {
   });
   res.send(aBuffer(original.contenido));
 });
-rutas.post('/:id/duplicado', () => { throw pendiente('#20'); });
+rutas.post('/:id/duplicado', async (req, res) => {
+  res.json(await resolverDuplicado(req.usuario.id, leerId(req.params.id), req.body?.accion));
+});
 
 export default rutas;
