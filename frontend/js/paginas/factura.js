@@ -70,7 +70,12 @@ const textos = {
     'factura.bannerSinLeer': 'Aún no hemos leído esta factura porque has llegado al límite de tu plan.',
     'factura.verPlanes': 'Ver planes',
     'factura.bannerConfirmada': 'Factura confirmada. Para cambiarla, reábrela.',
-    'factura.aviso.sin_nif': 'Este ticket no tiene NIF y puede que no lo puedas deducir. Pide la factura completa.',
+    'factura.aviso.sin_nif': 'Con este documento no vas a poder deducirte el IVA: le falta {falta}. Pide la factura completa al proveedor.',
+    'factura.falta.emisor': 'el NIF del proveedor',
+    'factura.falta.receptor': 'tu NIF',
+    'factura.falta.iva': 'el IVA desglosado',
+    'factura.falta.nif': 'el NIF',
+    'factura.falta.y': 'y',
     'factura.aviso.otro_nif': 'Esta factura está a nombre de otro NIF. Revisa el NIF del receptor.',
     'factura.aviso.total_no_cuadra': 'La base más el IVA no da el total. Revisa los importes.',
     'factura.aviso.duplicado': 'Puede que esta factura esté repetida. Mira la otra.',
@@ -149,7 +154,12 @@ const textos = {
     'factura.bannerSinLeer': "We haven't read this invoice yet because you've reached your plan's limit.",
     'factura.verPlanes': 'See plans',
     'factura.bannerConfirmada': 'Invoice confirmed. To change it, reopen it.',
-    'factura.aviso.sin_nif': "This receipt has no tax ID and you may not be able to deduct it. Ask for the full invoice.",
+    'factura.aviso.sin_nif': "With this document you won't be able to deduct the VAT: it's missing {falta}. Ask the supplier for the full invoice.",
+    'factura.falta.emisor': "the supplier's tax ID",
+    'factura.falta.receptor': 'your tax ID',
+    'factura.falta.iva': 'the VAT breakdown',
+    'factura.falta.nif': 'the tax ID',
+    'factura.falta.y': 'and',
     'factura.aviso.otro_nif': "This invoice is addressed to another tax ID. Check the recipient's tax ID.",
     'factura.aviso.total_no_cuadra': "Base plus VAT doesn't add up to the total. Check the amounts.",
     'factura.aviso.duplicado': 'This invoice may be a duplicate. Look at the other one.',
@@ -282,6 +292,13 @@ function pintarCabecera() {
   document.title = `${factura.emisor || t('factura.titulo')} · Cuadra`;
 }
 
+// "el NIF del proveedor y el IVA desglosado", según lo que diga el aviso (comprobaciones.js).
+function queFalta(datos) {
+  const falta = (Array.isArray(datos?.falta) ? datos.falta : []).filter((f) => ['emisor', 'receptor', 'iva'].includes(f));
+  const piezas = (falta.length ? falta : ['nif']).map((f) => t(`factura.falta.${f}`));
+  return piezas.length > 1 ? `${piezas.slice(0, -1).join(', ')} ${t('factura.falta.y')} ${piezas.at(-1)}` : piezas[0];
+}
+
 function pintarBanners() {
   const banners = [];
   if (factura.estado === 'sin_leer') {
@@ -294,7 +311,7 @@ function pintarBanners() {
   }
   for (const aviso of factura.avisos) {
     const clave = `factura.aviso.${aviso.tipo}`;
-    const texto = t(clave) === clave ? t('factura.aviso.otro') : t(clave);
+    const texto = t(clave) === clave ? t('factura.aviso.otro') : t(clave, { falta: queFalta(aviso.datos) });
     if (aviso.tipo === 'duplicado' && factura.duplicado_de) {
       const otra = factura.duplicado_de;
       banners.push(html`<a class="banner banner-aviso" href="#duplicado">${seguro(icono('alerta'))}

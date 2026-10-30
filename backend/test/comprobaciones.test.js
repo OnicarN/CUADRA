@@ -60,8 +60,8 @@ test('RF-27: total que cuadra, que no cuadra y tolerancia de 2 céntimos', async
   assert.deepEqual(await comprobar(id), ['total_no_cuadra']);
   const { rows: [aviso] } = await db.query(`SELECT datos FROM avisos WHERE factura_id = $1 AND tipo = 'total_no_cuadra'`, [id]);
   assert.equal(aviso.datos.diferencia, -9);
-  // Sin líneas de IVA no se puede comprobar: no salta.
-  assert.deepEqual(await comprobar(await crearFactura(lucia.id, { numero: 'C-3', base: null, cuota: null })), []);
+  // Sin IVA no se puede comprobar el total: no salta (sí salta el de que falta el IVA desglosado).
+  assert.deepEqual(await comprobar(await crearFactura(lucia.id, { numero: 'C-3', base: null, cuota: null })), ['sin_nif']);
 });
 
 test('al corregir el total desde la revisión, el aviso se cierra solo', async () => {
@@ -73,6 +73,35 @@ test('al corregir el total desde la revisión, el aviso se cierra solo', async (
   const { rows } = await db.query(`SELECT estado, cerrado_en FROM avisos WHERE factura_id = $1`, [id]);
   assert.equal(rows[0].estado, 'cerrado');
   assert.ok(rows[0].cerrado_en);
+});
+
+test('ticket sin IVA desglosado o sin NIF: aviso de que no se podrá deducir el IVA', async () => {
+  const falta = async (id) => {
+    await comprobarFactura(id);
+    const { rows } = await db.query(`SELECT datos FROM avisos WHERE factura_id = $1 AND tipo = 'sin_nif' AND estado = 'abierto'`, [id]);
+    return rows[0]?.datos.falta ?? null;
+  };
+  assert.deepEqual(await falta(await crearFactura(lucia.id, { numero: 'I-1', base: null, cuota: null })), ['iva']);
+  assert.deepEqual(
+    await falta(await crearFactura(lucia.id, { numero: 'I-2', nif_emisor: null, nif_receptor: null, base: null, cuota: null })),
+    ['emisor', 'receptor', 'iva'],
+  );
+  // Con las líneas de IVA ya está desglosado, aunque la cuota sea 0 (exenta).
+  const exenta = await crearFactura(lucia.id, { numero: 'I-3', base: 100, cuota: 0, total: 100 });
+  await db.query('INSERT INTO factura_iva (factura_id, base, tipo, cuota) VALUES ($1, 100, 0, 0)', [exenta]);
+  assert.equal(await falta(exenta), null);
+  // Las de otra moneda (de fuera de España) no llevan IVA español: no se avisa por eso.
+  const extranjera = await crearFactura(lucia.id, { numero: 'I-4', base: null, cuota: null });
+  await db.query("UPDATE facturas SET moneda = 'USD' WHERE id = $1", [extranjera]);
+  assert.equal(await falta(extranjera), null);
+
+  // Al desglosar el IVA en la revisión, cambia lo que falta y luego se cierra.
+  const id = await crearFactura(lucia.id, { numero: 'I-5', nif_emisor: null, base: null, cuota: null });
+  assert.deepEqual(await falta(id), ['emisor', 'iva']);
+  await lucia.cliente.patch(`/api/facturas/${id}`, { lineas_iva: [{ base: 100, tipo: 21, cuota: 21 }] });
+  assert.deepEqual(await falta(id), ['emisor']);
+  const { datos } = await lucia.cliente.patch(`/api/facturas/${id}`, { nif_emisor: 'A82018474' });
+  assert.deepEqual(tipos(datos.avisos), []);
 });
 
 test('RF-28: NIF del receptor propio, ajeno y ausente', async () => {

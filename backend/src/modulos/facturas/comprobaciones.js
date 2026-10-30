@@ -8,7 +8,8 @@
 // Comprueba:
 //   - RF-27 base + cuotas = total            -> aviso TOTAL_NO_CUADRA
 //   - RF-28 NIF del receptor = NIF del perfil -> aviso OTRO_NIF
-//   - falta NIF del emisor o del receptor     -> aviso SIN_NIF
+//   - falta NIF del emisor o del receptor, o  -> aviso SIN_NIF (con datos.falta: emisor,
+//     el IVA desglosado: sin IVA no se deduce    receptor y/o iva)
 //   - RF-35 posible duplicado                 -> aviso DUPLICADO y facturas.duplicado_de
 // Y cierra los avisos que ya no apliquen (por ejemplo, tras corregir el total).
 import { db } from '../../core/db.js';
@@ -86,11 +87,20 @@ export async function comprobarFactura(facturaId) {
       ...contexto, tipo: TIPOS_AVISO.OTRO_NIF, datos: { nif_receptor: f.nif_receptor },
     });
 
-    // Sin el NIF del emisor o del receptor puede que no se pueda deducir.
-    await avisarSi(!f.nif_emisor || !f.nif_receptor, {
-      ...contexto, tipo: TIPOS_AVISO.SIN_NIF,
-      datos: { falta: [!f.nif_emisor && 'emisor', !f.nif_receptor && 'receptor'].filter(Boolean) },
-    });
+    // Sin el NIF del emisor o del receptor, o sin el IVA desglosado, no se puede deducir el IVA:
+    // hay que pedir la factura completa. Las facturas en otra moneda no se miran por el IVA,
+    // porque las de fuera de España no lo llevan.
+    const { rows: [{ lineas }] } = await db.query('SELECT count(*)::int AS lineas FROM factura_iva WHERE factura_id = $1', [facturaId]);
+    const sinDesglose = f.moneda === 'EUR' && !lineas && f.cuota_iva === null;
+    const falta = [!f.nif_emisor && 'emisor', !f.nif_receptor && 'receptor', sinDesglose && 'iva'].filter(Boolean);
+    await avisarSi(falta.length > 0, { ...contexto, tipo: TIPOS_AVISO.SIN_NIF, datos: { falta } });
+    // Si ya estaba abierto y ahora falta otra cosa (por ejemplo, ha puesto el NIF), se actualiza el texto.
+    if (falta.length) {
+      await db.query(
+        "UPDATE avisos SET datos = $3 WHERE factura_id = $1 AND tipo = $2 AND estado = 'abierto' AND datos IS DISTINCT FROM $3::jsonb",
+        [facturaId, TIPOS_AVISO.SIN_NIF, JSON.stringify({ falta })],
+      );
+    }
 
     // RF-35: posible duplicado. Si el usuario ya dijo que la guarda, no se vuelve a preguntar.
     const duplicadoDe = f.duplicado_aceptado || f.total === null ? null : await buscarDuplicado(f);
