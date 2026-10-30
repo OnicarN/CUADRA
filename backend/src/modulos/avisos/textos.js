@@ -45,11 +45,40 @@ function deQue(factura, idioma, { es, en }) {
   return `${es} de ${nombre}${importe ? ` (${importe})` : ''}`;
 }
 
+// Qué le falta a un ticket para poder deducir el IVA (datos.falta de comprobaciones.js).
+// Los avisos antiguos no lo traen: entonces es el NIF.
+const PIEZAS = {
+  es: { emisor: 'el NIF del proveedor', receptor: 'tu NIF', iva: 'el IVA desglosado', nif: 'el NIF' },
+  en: { emisor: "the supplier's tax ID", receptor: 'your tax ID', iva: 'the VAT breakdown', nif: 'the tax ID' },
+};
+function queFalta(datos) {
+  const falta = (Array.isArray(datos.falta) ? datos.falta : []).filter((f) => f in PIEZAS.es);
+  return falta.length ? falta : ['nif'];
+}
+function lista(falta, idioma) {
+  const piezas = falta.map((f) => PIEZAS[idioma][f]);
+  const y = idioma === 'en' ? ' and ' : ' y ';
+  return piezas.length > 1 ? `${piezas.slice(0, -1).join(', ')}${y}${piezas.at(-1)}` : piezas[0];
+}
+
 const TEXTOS = {
-  [TIPOS_AVISO.SIN_NIF]: (a, l) => ({
-    es: { titulo: 'Ticket sin NIF', texto: `${deQue(a.factura, l, { es: 'El ticket' })} no tiene NIF y puede que no lo puedas deducir. Pide la factura completa.`, accion: 'Ver el ticket' },
-    en: { titulo: 'Receipt without tax ID', texto: `${deQue(a.factura, l, { en: 'The receipt' })} has no tax ID and you may not be able to deduct it. Ask for the full invoice.`, accion: 'See the receipt' },
-  }),
+  [TIPOS_AVISO.SIN_NIF]: (a, l) => {
+    const falta = queFalta(a.datos);
+    const nif = falta.some((f) => f !== 'iva');
+    const iva = falta.includes('iva');
+    return {
+      es: {
+        titulo: nif && iva ? 'Ticket sin NIF ni IVA desglosado' : iva ? 'Ticket sin IVA desglosado' : 'Ticket sin NIF',
+        texto: `Con ${deQue(a.factura, l, { es: 'este ticket' })} no vas a poder deducirte el IVA: le falta ${lista(falta, 'es')}. Pide la factura completa al proveedor.`,
+        accion: 'Ver el ticket',
+      },
+      en: {
+        titulo: nif && iva ? 'Receipt without tax ID or VAT breakdown' : iva ? 'Receipt without VAT breakdown' : 'Receipt without tax ID',
+        texto: `With ${deQue(a.factura, l, { en: 'this receipt' })} you won't be able to deduct the VAT: it's missing ${lista(falta, 'en')}. Ask the supplier for the full invoice.`,
+        accion: 'See the receipt',
+      },
+    };
+  },
   [TIPOS_AVISO.OTRO_NIF]: (a, l) => ({
     es: { titulo: 'Factura a otro NIF', texto: `${deQue(a.factura, l, { es: 'La factura' })} está a nombre de otro NIF${a.datos.nif_receptor ? ` (${a.datos.nif_receptor})` : ''}. Pide que te la hagan a tu nombre o no la podrás deducir.`, accion: 'Ver la factura' },
     en: { titulo: 'Invoice to another tax ID', texto: `${deQue(a.factura, l, { en: 'The invoice' })} is made out to another tax ID${a.datos.nif_receptor ? ` (${a.datos.nif_receptor})` : ''}. Ask for one in your name or you won't be able to deduct it.`, accion: 'See the invoice' },
