@@ -30,3 +30,31 @@
   #form-avisos { max-width: 560px; }
   #form-avisos > .boton { align-self: flex-start; }
 }
+
+/* Eliminar cuenta (RF-62, #27): tarjeta y ventana en dos pasos */
+.ajustes-baja { display: flex; flex-direction: column; gap: var(--e-4); }
+.ajustes-baja .titulo-seccion { margin-bottom: var(--e-1); }
+
+.ajustes-dialogo {
+  width: min(520px, calc(100% - 2 * var(--margen))); max-height: calc(100% - 2 * var(--margen));
+  padding: 0; border: 0; border-radius: var(--radio-tarjeta);
+  background: var(--tarjeta); color: var(--texto);
+}
+/* El fondo oscuro detrás de la ventana: ::backdrop no siempre hereda las variables de :root. */
+.ajustes-dialogo::backdrop { background: rgba(15, 15, 16, .5); }
+.ajustes-paso { display: flex; flex-direction: column; gap: var(--e-4); padding: var(--e-6); }
+.ajustes-paso-numero { font-size: 13px; font-weight: 600; color: var(--texto-2); text-transform: uppercase; letter-spacing: .04em; }
+.ajustes-paso .titulo-seccion { margin-top: calc(-1 * var(--e-2)); }
+.ajustes-lista { margin: calc(-1 * var(--e-2)) 0 0; padding-left: var(--e-6); display: flex; flex-direction: column; gap: var(--e-1); color: var(--texto-2); }
+.ajustes-casilla { display: flex; align-items: center; gap: var(--e-3); min-height: 44px; cursor: pointer; }
+.ajustes-casilla input { width: 22px; height: 22px; flex: none; margin: 0; accent-color: var(--acento); cursor: pointer; }
+.ajustes-dialogo-botones { display: flex; flex-direction: column-reverse; gap: var(--e-2); }
+.ajustes-dialogo .boton { width: 100%; }
+
+@media (min-width: 768px) {
+  .ajustes-baja { flex-direction: row; align-items: center; justify-content: space-between; }
+  .ajustes-baja .boton { flex: none; }
+  .ajustes-paso .boton-principal { align-self: flex-start; width: auto; }
+  .ajustes-dialogo-botones { flex-direction: row; justify-content: flex-end; }
+  .ajustes-dialogo-botones .boton { width: auto; }
+}
