@@ -7,6 +7,7 @@ import { t } from '../core/i18n.js';
 import { icono } from '../core/iconos.js';
 import { dinero } from '../core/formato.js';
 import { html, seguro, mostrarToast, etiquetaEstado } from '../core/ui.js';
+import { registrarServiceWorker, recogerCompartidos, alPoderInstalar, instalar, esIosSinInstalar } from '../pwa.js';
 
 const textos = {
   es: {
@@ -38,6 +39,13 @@ const textos = {
     'subir.estado.tarda': 'Está tardando más de lo normal. La verás en tus facturas cuando termine.',
     'subir.estado.sinLeer': 'Guardada. Se leerá cuando amplíes tu plan o empiece el mes.',
     'subir.estado.error': 'Error',
+    'subir.instalar.titulo': 'Cuadra en tu móvil',
+    'subir.instalar.texto': 'Instálala y podrás mandarle PDF y fotos desde el botón Compartir de cualquier app.',
+    'subir.instalar.boton': 'Instalar en el móvil',
+    'subir.instalar.ios': 'En iPhone: pulsa Compartir y luego "Añadir a pantalla de inicio".',
+    'subir.instalar.hecho': 'Cuadra instalada',
+    'subir.compartido': 'Subiendo lo que has compartido…',
+    'subir.compartidoVacio': 'No nos ha llegado ningún archivo. Prueba a compartirlo otra vez o súbelo desde aquí.',
     'subir.error.formato': 'Formato no admitido. Sube un PDF o una imagen (JPG, PNG o HEIC).',
     'subir.error.tamano': 'Es demasiado grande (máximo 15 MB).',
     'subir.limite': 'Has llegado al límite de facturas de tu plan. Las nuevas se guardan sin leer hasta que amplíes el plan o empiece el mes.',
@@ -72,6 +80,13 @@ const textos = {
     'subir.estado.tarda': "It's taking longer than usual. You'll see it in your invoices when it's done.",
     'subir.estado.sinLeer': 'Saved. It will be read when you upgrade your plan or the month starts.',
     'subir.estado.error': 'Error',
+    'subir.instalar.titulo': 'Cuadra on your phone',
+    'subir.instalar.texto': 'Install it and send it PDFs and photos from the Share button in any app.',
+    'subir.instalar.boton': 'Install on your phone',
+    'subir.instalar.ios': 'On iPhone: tap Share and then "Add to Home Screen".',
+    'subir.instalar.hecho': 'Cuadra installed',
+    'subir.compartido': 'Uploading what you shared…',
+    'subir.compartidoVacio': "We didn't receive any file. Try sharing it again or upload it from here.",
     'subir.error.formato': 'Format not supported. Upload a PDF or an image (JPG, PNG or HEIC).',
     'subir.error.tamano': 'It is too large (15 MB max).',
     'subir.limite': "You've reached your plan's invoice limit. New ones are saved unread until you upgrade or the month starts.",
@@ -140,6 +155,15 @@ contenido.innerHTML = html`
         <a class="boton-texto" href="/app/facturas">${t('subir.lista.verTodas')}</a>
       </div>
       <ul class="lista" id="lista"></ul>
+    </section>
+
+    <section class="tarjeta instalar" id="instalar" hidden>
+      <span class="zona-icono">${seguro(icono('movil'))}</span>
+      <div class="instalar-texto">
+        <h2 class="titulo-seccion">${t('subir.instalar.titulo')}</h2>
+        <p class="texto-2" id="instalar-detalle">${t('subir.instalar.texto')}</p>
+      </div>
+      <button type="button" class="boton boton-secundario" id="boton-instalar" hidden>${t('subir.instalar.boton')}</button>
     </section>
   </div>`;
 
@@ -367,3 +391,33 @@ seccionCamara.querySelectorAll('[data-modo]').forEach((pestana) => {
   });
 });
 window.addEventListener('pagehide', () => flujo?.getTracks().forEach((pista) => pista.stop()));
+
+// ---- App instalable y compartir (RF-22, #15) ----
+registrarServiceWorker();
+
+const tarjetaInstalar = document.getElementById('instalar');
+const botonInstalar = document.getElementById('boton-instalar');
+if (esIosSinInstalar()) {
+  // Safari no tiene botón de instalar: explicamos cómo hacerlo a mano.
+  document.getElementById('instalar-detalle').textContent = `${t('subir.instalar.texto')} ${t('subir.instalar.ios')}`;
+  tarjetaInstalar.hidden = false;
+}
+alPoderInstalar((puede) => {
+  botonInstalar.hidden = !puede;
+  if (!esIosSinInstalar()) tarjetaInstalar.hidden = !puede;
+});
+botonInstalar.addEventListener('click', async () => {
+  if (await instalar()) mostrarToast(t('subir.instalar.hecho'));
+});
+
+// Archivos compartidos desde otra app: el service worker los dejó guardados y nos manda aquí.
+if (new URLSearchParams(location.search).has('compartido')) {
+  history.replaceState(null, '', location.pathname);
+  const compartidos = await recogerCompartidos();
+  if (compartidos.length) {
+    mostrarToast(t('subir.compartido'));
+    subirArchivos(compartidos, 'compartir');
+  } else {
+    mostrarToast(t('subir.compartidoVacio'));
+  }
+}
