@@ -13,3 +13,5 @@
 @media (max-width: 767px) {
   .privacidad-seccion .boton { align-self: stretch; }
 }
+.privacidad-destacado { display: flex; align-items: flex-start; gap: var(--e-2); font-weight: 600; }
+.privacidad-destacado svg { width: 20px; height: 20px; flex: none; color: var(--verde); margin-top: 2px; }

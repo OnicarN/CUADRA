@@ -1,7 +1,8 @@
 // Privacidad (#51). Responsable: Ana
 // Qué datos guarda Cuadra, para qué, quién los ve y cómo descargarlos o borrarlos.
 // PROVISIONAL: el texto está pendiente de revisión legal (lo dice también la propia página).
-// Si cambian los servicios externos (lectura con IA, pagos, email, alojamiento), actualiza "terceros".
+// Si cambian los servicios externos (lectura con IA, pagos, email, alojamiento), actualiza "terceros" e "ia".
+// El apartado "ia" describe lo que envía modulos/lectura (el archivo y los nombres de las categorías).
 import { iniciarPagina } from '../core/layout.js';
 import { t } from '../core/i18n.js';
 import { icono } from '../core/iconos.js';
@@ -31,11 +32,21 @@ const textos = {
 
     'privacidad.terceros.titulo': 'Servicios que usamos',
     'privacidad.terceros.texto': 'Para funcionar, Cuadra se apoya en estos servicios, que solo reciben lo necesario para hacer su parte:',
-    'privacidad.terceros.ia': 'Google Gemini: lee la foto o el PDF de cada factura para sacar sus datos. Lo que propone la IA es solo una sugerencia hasta que tú lo confirmas.',
+    'privacidad.terceros.ia': 'Google Gemini: lee la foto o el PDF de cada factura para sacar sus datos (más abajo, los detalles).',
     'privacidad.terceros.google': 'Google: si entras con tu cuenta de Google o conectas Google Calendar.',
     'privacidad.terceros.pagos': 'Stripe: cobra los planes de pago. Cuadra no guarda los datos de tu tarjeta.',
     'privacidad.terceros.email': 'Nuestro proveedor de email: envía los correos de tu cuenta y los que mandas a tu gestoría.',
     'privacidad.terceros.alojamiento': 'Nuestro proveedor de alojamiento y base de datos: donde se guarda todo lo anterior.',
+
+    'privacidad.ia.titulo': 'Cómo usamos la IA con tus datos',
+    'privacidad.ia.texto': 'Cuadra usa inteligencia artificial (Google Gemini) solo para leer tus facturas y ahorrarte teclearlas.',
+    'privacidad.ia.envia': 'Qué se envía: la foto o el PDF de cada factura que subes y la lista de nombres de tus categorías, para que proponga una.',
+    'privacidad.ia.noEnvia': 'Qué no se envía: tu nombre, tu email, tu contraseña ni tu perfil fiscal. Aun así, la propia factura puede llevar datos tuyos, como tu NIF o tu dirección.',
+    'privacidad.ia.cuando': 'Cuándo: solo al leer una factura nueva. No se envían tus otras facturas ni tu historial.',
+    'privacidad.ia.decides': 'Tú decides: lo que lee la IA es una sugerencia. Nada cuenta en tus cifras, el Excel o el informe hasta que tú lo revisas y lo confirmas, y puedes corregirlo todo.',
+    'privacidad.ia.entrenar': 'Cuadra no usa tus facturas para entrenar ningún modelo de IA.',
+    'privacidad.ia.google': 'Google trata los archivos según las condiciones de la API de Gemini. Según el plan de la API que se use, Google puede conservarlos un tiempo o usarlos para mejorar sus servicios. Antes de la versión definitiva de este texto se indicará el plan contratado y sus condiciones.',
+    'privacidad.ia.sinIa': 'Si prefieres que una factura no pase por la IA, no la subas a Cuadra: de momento no hay forma de leerla sin ella.',
 
     'privacidad.control.titulo': 'Tú tienes el control',
     'privacidad.control.ver': 'Ver y corregir tus datos: en tu perfil y en cada factura.',
@@ -70,11 +81,21 @@ const textos = {
 
     'privacidad.terceros.titulo': 'Services we use',
     'privacidad.terceros.texto': 'To work, Cuadra relies on these services, which only receive what they need to do their part:',
-    'privacidad.terceros.ia': 'Google Gemini: reads the photo or PDF of each invoice to extract its details. What the AI suggests is only a suggestion until you confirm it.',
+    'privacidad.terceros.ia': 'Google Gemini: reads the photo or PDF of each invoice to extract its details (details below).',
     'privacidad.terceros.google': 'Google: if you sign in with your Google account or connect Google Calendar.',
     'privacidad.terceros.pagos': 'Stripe: charges the paid plans. Cuadra does not store your card details.',
     'privacidad.terceros.email': 'Our email provider: sends your account emails and the ones you send to your accountant.',
     'privacidad.terceros.alojamiento': 'Our hosting and database provider: where all of the above is stored.',
+
+    'privacidad.ia.titulo': 'How we use AI with your data',
+    'privacidad.ia.texto': 'Cuadra uses artificial intelligence (Google Gemini) only to read your invoices so you do not have to type them.',
+    'privacidad.ia.envia': 'What is sent: the photo or PDF of each invoice you upload and the list of your category names, so it can suggest one.',
+    'privacidad.ia.noEnvia': 'What is not sent: your name, email, password or tax profile. Even so, the invoice itself may contain your details, such as your tax ID or address.',
+    'privacidad.ia.cuando': 'When: only when reading a new invoice. Your other invoices and your history are not sent.',
+    'privacidad.ia.decides': 'You decide: what the AI reads is a suggestion. Nothing counts in your figures, the Excel file or the report until you review and confirm it, and you can correct everything.',
+    'privacidad.ia.entrenar': 'Cuadra does not use your invoices to train any AI model.',
+    'privacidad.ia.google': 'Google handles the files under the Gemini API terms. Depending on the API plan used, Google may keep them for a while or use them to improve its services. Before the final version of this text, the plan in use and its terms will be stated.',
+    'privacidad.ia.sinIa': "If you'd rather an invoice did not go through the AI, don't upload it to Cuadra: for now there is no way to read it without it.",
 
     'privacidad.control.titulo': "You're in control",
     'privacidad.control.ver': 'See and correct your data: in your profile and on each invoice.',
@@ -116,6 +137,12 @@ document.getElementById('contenido').innerHTML = html`
     ${seguro(seccion('terceros', html`
       <p>${t('privacidad.terceros.texto')}</p>
       ${seguro(lista(['privacidad.terceros.ia', 'privacidad.terceros.google', 'privacidad.terceros.pagos', 'privacidad.terceros.email', 'privacidad.terceros.alojamiento']))}`))}
+    ${seguro(seccion('ia', html`
+      <p>${t('privacidad.ia.texto')}</p>
+      ${seguro(lista(['privacidad.ia.envia', 'privacidad.ia.noEnvia', 'privacidad.ia.cuando', 'privacidad.ia.decides']))}
+      <p class="privacidad-destacado">${seguro(icono('escudo'))}<span>${t('privacidad.ia.entrenar')}</span></p>
+      <p class="texto-2">${t('privacidad.ia.google')}</p>
+      <p class="texto-2">${t('privacidad.ia.sinIa')}</p>`))}
     ${seguro(seccion('control', html`
       ${seguro(lista(['privacidad.control.ver', 'privacidad.control.descargar', 'privacidad.control.eliminar']))}
       <div class="banner banner-aviso">${seguro(icono('alerta'))}<span class="banner-texto">${t('privacidad.control.hacienda')}</span></div>
