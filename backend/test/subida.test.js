@@ -100,15 +100,15 @@ test('al llegar al límite del plan se guarda como sin leer y avisa (RF-23)', as
   assert.equal(rows[0].n, 1);
 });
 
-test('si la lectura falla, la factura vuelve a sin leer y no gasta lectura', async () => {
-  // Mientras la lectura (#13) no esté hecha, leerFactura siempre falla.
-  const { id, cookie } = await crearUsuario('falla@prueba.es');
+test('sin clave de la IA la factura queda pendiente para rellenarla a mano', async () => {
+  const { id, cookie } = await crearUsuario('sinclave@prueba.es');
   const { datos } = await subir(cookie, [['a.pdf', PDF]]);
   assert.equal(datos[0].estado, 'pendiente');
   await new Promise((resolve) => setTimeout(resolve, 200));
-  const { rows } = await db.query('SELECT estado, leida_en FROM facturas WHERE usuario_id = $1', [id]);
-  assert.equal(rows[0].estado, 'sin_leer');
-  assert.equal(rows[0].leida_en, null);
+  const { rows } = await db.query('SELECT estado, leida_en, datos_ia FROM facturas WHERE usuario_id = $1', [id]);
+  assert.equal(rows[0].estado, 'pendiente');
+  assert.ok(rows[0].leida_en);
+  assert.equal(rows[0].datos_ia.motivo, 'sin_clave_api');
 });
 
 test('sin archivos responde 400', async () => {
