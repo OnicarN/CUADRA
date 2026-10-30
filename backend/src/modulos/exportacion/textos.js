@@ -12,6 +12,30 @@ export const TEXTOS = {
     sinCategoria: 'Sin categoría',
     archivoExcel: 'cuadra-facturas-{desde}_{hasta}.xlsx',
     archivoInforme: 'cuadra-informe-{anio}-T{trimestre}.pdf',
+    copia: {
+      archivo: 'cuadra-copia-{fecha}.zip',
+      confirmadas: 'facturas-confirmadas.xlsx',
+      sinConfirmar: 'facturas-sin-confirmar.xlsx',
+      originales: 'originales',
+      sinFecha: 'sin-fecha',
+      trimestre: 'T{trimestre}',
+      leeme: 'LEEME.txt',
+      textoLeeme: `Copia de tu cuenta de Cuadra
+Hecha el {fecha} para {nombre} ({email}).
+
+Qué hay en esta carpeta:
+
+- facturas-confirmadas.xlsx: las {confirmadas} facturas que revisaste y confirmaste, con todos sus datos.
+  Es el mismo Excel que se envía a la gestoría.
+- facturas-sin-confirmar.xlsx: las {sinConfirmar} facturas que aún no habías confirmado. Sus datos los leyó
+  la IA y pueden tener errores: compruébalos con el original.
+- originales/: las fotos y PDFs de todas tus facturas ({originales} archivos), ordenados por año y trimestre.
+  Las que no tienen fecha están en originales/sin-fecha/.
+
+Importante: Hacienda puede pedirte las facturas y los justificantes durante varios años.
+Guarda esta copia en un sitio seguro.
+`,
+    },
     informe: {
       titulo: 'Informe del {trimestre}.º trimestre de {anio}',
       periodo: 'Del {desde} al {hasta}',
@@ -63,6 +87,30 @@ export const TEXTOS = {
     sinCategoria: 'No category',
     archivoExcel: 'cuadra-invoices-{desde}_{hasta}.xlsx',
     archivoInforme: 'cuadra-report-{anio}-Q{trimestre}.pdf',
+    copia: {
+      archivo: 'cuadra-backup-{fecha}.zip',
+      confirmadas: 'confirmed-invoices.xlsx',
+      sinConfirmar: 'unconfirmed-invoices.xlsx',
+      originales: 'originals',
+      sinFecha: 'no-date',
+      trimestre: 'Q{trimestre}',
+      leeme: 'README.txt',
+      textoLeeme: `Backup of your Cuadra account
+Made on {fecha} for {nombre} ({email}).
+
+What is in this folder:
+
+- confirmed-invoices.xlsx: the {confirmadas} invoices you reviewed and confirmed, with all their details.
+  It is the same Excel file that is sent to your accountant.
+- unconfirmed-invoices.xlsx: the {sinConfirmar} invoices you had not confirmed yet. Their details were read
+  by the AI and may contain mistakes: check them against the original.
+- originals/: the photos and PDFs of all your invoices ({originales} files), sorted by year and quarter.
+  The ones without a date are in originals/no-date/.
+
+Important: the Spanish Tax Agency can ask for your invoices and receipts for several years.
+Keep this backup somewhere safe.
+`,
+    },
     informe: {
       titulo: 'Report for Q{trimestre} {anio}',
       periodo: 'From {desde} to {hasta}',

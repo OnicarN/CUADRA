@@ -5,12 +5,12 @@
 // GET  /informe   ?anio&trimestre                    descarga el PDF trimestral    RF-52 (hecho, plan con 'informes')
 // POST /enviar    { tipo: 'excel', desde, hasta, categorias } | { tipo: 'informe', anio, trimestre }
 //                 lo envía a la gestoría                                          RF-53 (hecho, plan con 'gestoria')
-// GET  /todo      Excel completo + ZIP con todos los originales (antes de la baja) RF-62
+// GET  /todo      ZIP con los Excel de todas las facturas y todos los originales  RF-62 (hecho, #27)
 import { Router } from 'express';
 import { db } from '../../core/db.js';
 import { requiereSesion } from '../../core/auth.js';
 import { enviarEmail } from '../../core/email.js';
-import { peticionIncorrecta, prohibido, pendiente } from '../../core/errores.js';
+import { peticionIncorrecta, prohibido } from '../../core/errores.js';
 import { tieneFuncion } from '../suscripcion/uso.js';
 import { FUNCIONES } from '../suscripcion/planes.js';
 import { obtenerPerfil } from '../perfil/servicio.js';
@@ -18,6 +18,7 @@ import { facturasConfirmadas, datosInforme, idiomaDe } from './datos.js';
 import { generarExcel } from './excel.js';
 import { generarInforme } from './informe.js';
 import { TEXTOS, rellenar } from './textos.js';
+import { escribirCopia, nombreCopia } from './copia.js';
 
 const rutas = Router();
 rutas.use(requiereSesion);
@@ -117,6 +118,14 @@ rutas.post('/enviar', async (req, res) => {
   res.json({ ok: true, para: perfil.email_gestoria });
 });
 
-rutas.get('/todo', () => { throw pendiente('#27'); });
+// RF-62. Copia de todo antes de eliminar la cuenta (ver copia.js). Para todos los planes.
+rutas.get('/todo', async (req, res) => {
+  res.set({
+    'Content-Type': 'application/zip',
+    'Content-Disposition': `attachment; filename="${await nombreCopia(req.usuario.id)}"`,
+    'Cache-Control': 'no-store',
+  });
+  await escribirCopia(req.usuario.id, res);
+});
 
 export default rutas;
