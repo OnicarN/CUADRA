@@ -58,3 +58,18 @@
   .ajustes-dialogo-botones { flex-direction: row; justify-content: flex-end; }
   .ajustes-dialogo-botones .boton { width: auto; }
 }
+
+/* ---------- Versiones de empresa y personal (#50, Rodrigo) ---------- */
+.ajustes-etiqueta { font-size: 14px; font-weight: 500; margin-bottom: var(--e-2); }
+.ajustes-versiones { display: grid; gap: var(--hueco); grid-template-columns: 1fr; margin-top: var(--e-4); }
+@media (min-width: 768px) { .ajustes-versiones { grid-template-columns: 1fr 1fr; } }
+.ajustes-version {
+  display: flex; flex-direction: column; align-items: flex-start; gap: var(--e-3);
+  border: 1px solid var(--borde); border-radius: var(--radio-campo); padding: var(--e-4); min-width: 0;
+}
+.ajustes-version .campo { width: 100%; }
+.ajustes-version-titulo { display: flex; align-items: center; gap: var(--e-2); font-size: 16px; font-weight: 600; }
+.ajustes-version-titulo svg { width: 20px; height: 20px; color: var(--acento); }
+.ajustes-version .boton { margin-top: auto; }
+.campo .ajustes-dias #presupuesto_mensual { width: 140px; }
+.ajustes-ayuda { font-size: 13px; }

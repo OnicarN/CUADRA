@@ -19,17 +19,28 @@ const SECCIONES_APP = [
   { id: 'informes', href: '/app/informes', icono: 'informes', texto: 'nav.informes', soloOrdenador: true },
 ];
 
+// Versión de empresa y personal (#50): se elige arriba y cada una tiene sus facturas.
+const TEXTOS_VERSION = {
+  es: { 'version.titulo': 'Versión', 'version.empresa': 'Empresa', 'version.personal': 'Personal' },
+  en: { 'version.titulo': 'Version', 'version.empresa': 'Business', 'version.personal': 'Personal' },
+};
+
 // Páginas que, en el menú, cuentan como otra sección.
 const SECCION_DE = { factura: 'facturas', ajustes: 'perfil', suscripcion: 'perfil', calendario: 'perfil' };
 
 export async function iniciarPagina({ pagina, privada = false, textos } = {}) {
+  agregarTextos(TEXTOS_VERSION);
   agregarTextos(textos);
   aplicarTema();
   let usuario = null;
+  let version = null;
 
   if (privada) {
     try {
-      usuario = await api('/auth/yo');
+      [usuario, version] = await Promise.all([
+        api('/auth/yo'),
+        api('/versiones').then((v) => v.actual).catch(() => 'empresa'),
+      ]);
     } catch (error) {
       if (error.estado === 401) {
         location.href = `/entrar?volver=${encodeURIComponent(location.pathname + location.search)}`;
@@ -39,7 +50,7 @@ export async function iniciarPagina({ pagina, privada = false, textos } = {}) {
     }
     const temaLocal = temaGuardado();
     aplicarTema(temaLocal !== 'sistema' ? temaLocal : usuario.tema);
-    pintarApp(usuario, SECCION_DE[pagina] || pagina);
+    pintarApp(usuario, SECCION_DE[pagina] || pagina, version);
     actualizarContadorAvisos();
   } else {
     usuario = await api('/auth/sesion').catch(() => null);
@@ -48,7 +59,7 @@ export async function iniciarPagina({ pagina, privada = false, textos } = {}) {
 
   aplicarTextos();
   pintarIconos();
-  return { usuario };
+  return { usuario, version };
 }
 
 export async function actualizarContadorAvisos() {
@@ -76,7 +87,15 @@ function activarSelectorIdioma(raiz) {
   });
 }
 
-function pintarApp(usuario, seccion) {
+// Cambia de versión y vuelve a cargar. En el detalle de una factura se va a la lista, porque
+// esa factura es de la otra versión.
+async function elegirVersion(version) {
+  await api('/versiones/actual', { metodo: 'PUT', cuerpo: { version } });
+  if (location.pathname === '/app/factura') location.href = '/app/facturas';
+  else location.reload();
+}
+
+function pintarApp(usuario, seccion, version = 'empresa') {
   const actual = (id) => (id === seccion ? 'aria-current="page"' : '');
   const inicial = (usuario.nombre || usuario.email || '?').trim()[0].toUpperCase();
 
@@ -85,6 +104,9 @@ function pintarApp(usuario, seccion) {
   cabecera.innerHTML = `
     <div class="contenedor app-cabecera-fila">
       <a class="logo" href="/app/panel">${logo()}<span class="logo-nombre">Cuadra</span></a>
+      <div class="pestanas selector-version" role="group" data-t-aria="version.titulo">
+        ${['empresa', 'personal'].map((v) => `<button type="button" class="pestana" data-version="${v}" aria-pressed="${v === version}" data-t="version.${v}"></button>`).join('')}
+      </div>
       <div class="app-cabecera-centro solo-ordenador">
         <nav class="pestanas" aria-label="Secciones">
           ${SECCIONES_APP.map((s) => `<a class="pestana" href="${s.href}" ${actual(s.id)} data-t="${s.texto}"></a>`).join('')}
@@ -104,6 +126,12 @@ function pintarApp(usuario, seccion) {
       </div>
     </div>`;
   document.body.prepend(cabecera);
+  cabecera.querySelector('.selector-version').addEventListener('click', (evento) => {
+    const boton = evento.target.closest('[data-version]');
+    if (!boton || boton.getAttribute('aria-pressed') === 'true') return;
+    boton.disabled = true;
+    elegirVersion(boton.dataset.version).catch(() => { boton.disabled = false; });
+  });
 
   const barra = document.createElement('nav');
   barra.className = 'barra-movil';

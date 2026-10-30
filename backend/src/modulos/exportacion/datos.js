@@ -17,7 +17,8 @@ export async function facturasConfirmadas(usuarioId, { desde, hasta, categorias 
     filtroCategorias = `AND f.categoria_id = ANY($${params.length}::int[])`;
   }
   return consultarFacturas(
-    `f.usuario_id = $1 AND f.estado = 'confirmada' AND f.fecha BETWEEN $2::text::date AND $3::text::date ${filtroCategorias}`,
+    // Solo las de la versión de empresa: los tickets personales no van a Hacienda (#50).
+    `f.usuario_id = $1 AND f.version = 'empresa' AND f.estado = 'confirmada' AND f.fecha BETWEEN $2::text::date AND $3::text::date ${filtroCategorias}`,
     params,
   );
 }
@@ -107,7 +108,7 @@ export async function datosInforme(usuarioId, anio, trimestre) {
   );
   const { rows: [sinConfirmar] } = await db.query(
     `SELECT count(*)::int AS cantidad FROM facturas
-      WHERE usuario_id = $1 AND estado <> 'confirmada'
+      WHERE usuario_id = $1 AND estado <> 'confirmada' AND version = 'empresa'
         AND COALESCE(fecha, creado_en::date) BETWEEN $2::text::date AND $3::text::date`,
     [usuarioId, rango.desde, rango.hasta],
   );
