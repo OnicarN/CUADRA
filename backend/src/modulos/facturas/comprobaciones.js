@@ -12,6 +12,7 @@
 //     el IVA desglosado: sin IVA no se deduce    receptor y/o iva)
 //   - RF-35 posible duplicado                 -> aviso DUPLICADO y facturas.duplicado_de
 // Y cierra los avisos que ya no apliquen (por ejemplo, tras corregir el total).
+// En la versión personal solo se mira el duplicado (#50).
 import { db } from '../../core/db.js';
 import { crearAviso, cerrarAvisos, TIPOS_AVISO } from '../../core/avisos.js';
 import { normalizarNif } from '../../core/validacion.js';
@@ -32,7 +33,7 @@ async function avisarSi(condicion, { usuarioId, facturaId, tipo, datos }) {
 // mismo NIF del emisor, número y total; sin número (tickets), mismo emisor, fecha, hora y total.
 // Solo se compara con las anteriores, así la repetida es siempre la que llegó después.
 async function buscarDuplicado(f) {
-  const comun = `usuario_id = $1 AND id <> $2 AND estado <> 'sin_leer' AND NOT duplicado_aceptado
+  const comun = `usuario_id = $1 AND id <> $2 AND estado <> 'sin_leer' AND NOT duplicado_aceptado AND version = '${f.version}'
     AND (creado_en, id) < ($3::timestamptz, $2) AND total = $4`;
   if (f.numero && f.nif_emisor) {
     const { rows } = await db.query(
@@ -67,39 +68,46 @@ export async function comprobarFactura(facturaId) {
 
   // Sin leer, o leída sin sacar nada (la IA no pudo): no hay datos que comprobar todavía.
   const conDatos = f.estado !== 'sin_leer' && (f.emisor || f.total !== null || f.numero);
+  // En la versión personal (#50) son tickets para llevar el control de los gastos: no se
+  // mira ni el NIF ni el IVA, solo si está repetido.
+  const fiscales = [TIPOS_AVISO.TOTAL_NO_CUADRA, TIPOS_AVISO.OTRO_NIF, TIPOS_AVISO.SIN_NIF];
   if (!conDatos) {
-    for (const tipo of [TIPOS_AVISO.TOTAL_NO_CUADRA, TIPOS_AVISO.OTRO_NIF, TIPOS_AVISO.SIN_NIF, TIPOS_AVISO.DUPLICADO]) {
+    for (const tipo of [...fiscales, TIPOS_AVISO.DUPLICADO]) {
       await cerrarAvisos({ usuarioId, tipo, facturaId });
     }
   } else {
-    // RF-27: base + IVA = total. Si falta alguno de los tres no se puede comprobar.
-    const sePuedeSumar = f.total !== null && f.base_imponible !== null && f.cuota_iva !== null;
-    const diferencia = sePuedeSumar ? Math.round((f.base_imponible + f.cuota_iva - f.total) * 100) / 100 : 0;
-    await avisarSi(Math.abs(diferencia) > TOLERANCIA, {
-      ...contexto, tipo: TIPOS_AVISO.TOTAL_NO_CUADRA,
-      datos: { base: f.base_imponible, cuota: f.cuota_iva, total: f.total, diferencia },
-    });
+    if (f.version === 'personal') {
+      for (const tipo of fiscales) await cerrarAvisos({ usuarioId, tipo, facturaId });
+    } else {
+      // RF-27: base + IVA = total. Si falta alguno de los tres no se puede comprobar.
+      const sePuedeSumar = f.total !== null && f.base_imponible !== null && f.cuota_iva !== null;
+      const diferencia = sePuedeSumar ? Math.round((f.base_imponible + f.cuota_iva - f.total) * 100) / 100 : 0;
+      await avisarSi(Math.abs(diferencia) > TOLERANCIA, {
+        ...contexto, tipo: TIPOS_AVISO.TOTAL_NO_CUADRA,
+        datos: { base: f.base_imponible, cuota: f.cuota_iva, total: f.total, diferencia },
+      });
 
-    // RF-28: la factura tiene que ir a nombre del NIF del perfil.
-    const perfil = await obtenerPerfil(usuarioId);
-    const receptor = normalizarNif(f.nif_receptor);
-    await avisarSi(Boolean(perfil?.nif && receptor && receptor !== normalizarNif(perfil.nif)), {
-      ...contexto, tipo: TIPOS_AVISO.OTRO_NIF, datos: { nif_receptor: f.nif_receptor },
-    });
+      // RF-28: la factura tiene que ir a nombre del NIF del perfil.
+      const perfil = await obtenerPerfil(usuarioId);
+      const receptor = normalizarNif(f.nif_receptor);
+      await avisarSi(Boolean(perfil?.nif && receptor && receptor !== normalizarNif(perfil.nif)), {
+        ...contexto, tipo: TIPOS_AVISO.OTRO_NIF, datos: { nif_receptor: f.nif_receptor },
+      });
 
-    // Sin el NIF del emisor o del receptor, o sin el IVA desglosado, no se puede deducir el IVA:
-    // hay que pedir la factura completa. Las facturas en otra moneda no se miran por el IVA,
-    // porque las de fuera de España no lo llevan.
-    const { rows: [{ lineas }] } = await db.query('SELECT count(*)::int AS lineas FROM factura_iva WHERE factura_id = $1', [facturaId]);
-    const sinDesglose = f.moneda === 'EUR' && !lineas && f.cuota_iva === null;
-    const falta = [!f.nif_emisor && 'emisor', !f.nif_receptor && 'receptor', sinDesglose && 'iva'].filter(Boolean);
-    await avisarSi(falta.length > 0, { ...contexto, tipo: TIPOS_AVISO.SIN_NIF, datos: { falta } });
-    // Si ya estaba abierto y ahora falta otra cosa (por ejemplo, ha puesto el NIF), se actualiza el texto.
-    if (falta.length) {
-      await db.query(
-        "UPDATE avisos SET datos = $3 WHERE factura_id = $1 AND tipo = $2 AND estado = 'abierto' AND datos IS DISTINCT FROM $3::jsonb",
-        [facturaId, TIPOS_AVISO.SIN_NIF, JSON.stringify({ falta })],
-      );
+      // Sin el NIF del emisor o del receptor, o sin el IVA desglosado, no se puede deducir el IVA:
+      // hay que pedir la factura completa. Las facturas en otra moneda no se miran por el IVA,
+      // porque las de fuera de España no lo llevan.
+      const { rows: [{ lineas }] } = await db.query('SELECT count(*)::int AS lineas FROM factura_iva WHERE factura_id = $1', [facturaId]);
+      const sinDesglose = f.moneda === 'EUR' && !lineas && f.cuota_iva === null;
+      const falta = [!f.nif_emisor && 'emisor', !f.nif_receptor && 'receptor', sinDesglose && 'iva'].filter(Boolean);
+      await avisarSi(falta.length > 0, { ...contexto, tipo: TIPOS_AVISO.SIN_NIF, datos: { falta } });
+      // Si ya estaba abierto y ahora falta otra cosa (por ejemplo, ha puesto el NIF), se actualiza el texto.
+      if (falta.length) {
+        await db.query(
+          "UPDATE avisos SET datos = $3 WHERE factura_id = $1 AND tipo = $2 AND estado = 'abierto' AND datos IS DISTINCT FROM $3::jsonb",
+          [facturaId, TIPOS_AVISO.SIN_NIF, JSON.stringify({ falta })],
+        );
+      }
     }
 
     // RF-35: posible duplicado. Si el usuario ya dijo que la guarda, no se vuelve a preguntar.

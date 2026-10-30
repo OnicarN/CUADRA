@@ -180,14 +180,17 @@ const textos = {
   },
 };
 
+// En la versión personal (#50) son tickets para controlar gastos: ni NIF, ni número, ni IVA.
+function deEmpresa(f) { return f.version !== 'personal'; }
+
 // Campos que se ven y se corrigen uno a uno, en este orden.
 const CAMPOS = [
   { campo: 'emisor', tipo: 'texto' },
-  { campo: 'nif_emisor', tipo: 'texto' },
-  { campo: 'numero', tipo: 'texto' },
+  { campo: 'nif_emisor', tipo: 'texto', soloSi: deEmpresa },
+  { campo: 'numero', tipo: 'texto', soloSi: deEmpresa },
   { campo: 'fecha', tipo: 'fecha' },
   { campo: 'hora', tipo: 'hora' },
-  { campo: 'nif_receptor', tipo: 'texto' },
+  { campo: 'nif_receptor', tipo: 'texto', soloSi: deEmpresa },
   { campo: 'categoria_id', tipo: 'categoria' },
   { campo: 'total', tipo: 'importe' },
   { campo: 'moneda', tipo: 'moneda' },
@@ -365,6 +368,8 @@ function pintarDatos() {
 }
 
 function pintarIva() {
+  $('iva').hidden = !deEmpresa(factura);
+  if ($('iva').hidden) return;
   const lineas = factura.lineas_iva;
   const tabla = lineas.length
     ? html`<table class="factura-tabla">

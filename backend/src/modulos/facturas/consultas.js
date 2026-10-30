@@ -7,6 +7,7 @@
 // Todas filtran por usuario_id (RF-09).
 import { db } from '../../core/db.js';
 import { peticionIncorrecta } from '../../core/errores.js';
+import { versionActual } from '../versiones/servicio.js';
 
 export const POR_PAGINA = 30;
 const ESTADOS = ['sin_leer', 'pendiente', 'confirmada'];
@@ -42,6 +43,8 @@ export async function listarFacturas(usuarioId, filtros = {}) {
   const params = [usuarioId];
   const condiciones = ['f.usuario_id = $1'];
   const nuevo = (v) => { params.push(v); return `$${params.length}`; };
+  // Solo las de la versión en la que está (empresa o personal, #50).
+  condiciones.push(`f.version = ${nuevo(await versionActual(usuarioId))}`);
 
   const q = valor('q');
   if (q) {

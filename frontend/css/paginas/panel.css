@@ -64,3 +64,33 @@
 .panel-barra:hover .panel-tooltip, .panel-barra:focus-visible .panel-tooltip { opacity: 1; transform: none; }
 @media (hover: none) { .panel-tooltip { display: none; } }
 @media (prefers-reduced-motion: reduce) { .panel-tooltip { transition: none; } }
+
+/* ---------- Versión personal: presupuesto (#50) ---------- */
+.panel-presupuesto {
+  display: block; height: 8px; margin-bottom: var(--e-2); border-radius: var(--pildora);
+  background: var(--gris-suave); overflow: hidden;
+}
+.panel-presupuesto > span { display: block; height: 100%; background: var(--acento); border-radius: var(--pildora); }
+.panel-presupuesto-pasado > span { background: var(--rojo); }
+.panel-cifra-pasado .cifra { color: var(--rojo); }
+
+/* ---------- Versión de empresa: impresos del trimestre (#50) ---------- */
+.panel-impresos { display: flex; flex-direction: column; gap: var(--e-4); }
+.panel-impresos .tarjeta-cabecera { flex-wrap: wrap; gap: var(--e-2); }
+.panel-modelos { display: grid; gap: var(--hueco); grid-template-columns: 1fr; }
+@media (min-width: 768px) { .panel-modelos { grid-template-columns: 1fr 1fr; } }
+.panel-modelo { border: 1px solid var(--borde); border-radius: var(--radio-campo); padding: var(--e-4); min-width: 0; }
+.panel-modelo-titulo { font-size: 15px; font-weight: 600; margin-bottom: var(--e-2); }
+.panel-casillas { list-style: none; margin: 0; padding: 0; }
+.panel-casilla {
+  display: flex; align-items: center; gap: var(--e-3); padding: var(--e-2) 0; border-bottom: 1px solid var(--borde);
+}
+.panel-casilla:last-child { border-bottom: 0; }
+.panel-casilla-texto { flex: 1; min-width: 0; display: flex; flex-direction: column; gap: 2px; font-size: 14px; }
+.panel-casilla-numero { font-weight: 600; }
+.panel-casilla-importe { font-size: 18px; font-weight: 600; white-space: nowrap; }
+.panel-casilla .boton-icono svg { width: 18px; height: 18px; }
+.panel-modelo-pie { font-size: 13px; margin-top: var(--e-2); }
+.panel-impresos-botones { display: flex; flex-wrap: wrap; gap: var(--e-3); }
+@media (max-width: 599px) { .panel-impresos-botones .boton { flex: 1 1 100%; } }
+.panel-impresos-aviso { font-size: 13px; }

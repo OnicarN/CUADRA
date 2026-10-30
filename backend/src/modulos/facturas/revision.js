@@ -112,9 +112,9 @@ export async function obtenerFactura(usuarioId, facturaId) {
     // Para el botón "Siguiente pendiente": la siguiente del histórico (más reciente primero).
     db.query(
       `SELECT id FROM facturas
-        WHERE usuario_id = $1 AND estado = 'pendiente' AND id <> $2
+        WHERE usuario_id = $1 AND estado = 'pendiente' AND id <> $2 AND version = $3
         ORDER BY COALESCE(fecha, creado_en::date) DESC, creado_en DESC, id DESC LIMIT 1`,
-      [usuarioId, facturaId],
+      [usuarioId, facturaId, factura.version],
     ),
   ]);
 

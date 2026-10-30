@@ -15,6 +15,7 @@ import { noEncontrado, peticionIncorrecta, conflicto } from '../../core/errores.
 import { trimestreDe, plazoPresentacion, diasEntre, hoy } from '../../core/fiscal.js';
 import { config } from '../../config.js';
 import { obtenerAjustes } from '../perfil/servicio.js';
+import { versionActual } from '../versiones/servicio.js';
 import { textosAviso, textoAviso, destinoAviso, IMPORTANTES } from './textos.js';
 
 export const ESTADOS = ['abierto', 'cerrado'];
@@ -44,18 +45,34 @@ function deFila(fila) {
   };
 }
 
+// Versión de empresa y personal (#50): los avisos de una factura salen en la versión de la
+// factura; los demás en las dos, menos el del trimestre, que solo es de empresa.
+// $2 es la versión. Necesita el LEFT JOIN de la factura como f.
+const DE_LA_VERSION = `((a.factura_id IS NULL AND (a.tipo <> '${TIPOS_AVISO.TRIMESTRE}' OR $2 = 'empresa')) OR f.version = $2)`;
+
+export async function contarAbiertos(usuarioId, version) {
+  const { rows: [{ abiertos }] } = await db.query(
+    `SELECT count(*)::int AS abiertos FROM avisos a LEFT JOIN facturas f ON f.id = a.factura_id AND f.usuario_id = a.usuario_id
+      WHERE a.usuario_id = $1 AND a.estado = 'abierto' AND ${DE_LA_VERSION}`,
+    [usuarioId, version ?? await versionActual(usuarioId)],
+  );
+  return abiertos;
+}
+
 export async function listarAvisos(usuarioId, estado = 'abierto') {
   if (!ESTADOS.includes(estado)) throw peticionIncorrecta('El estado tiene que ser abierto o cerrado');
+  const version = await versionActual(usuarioId);
   const { rows } = estado === 'abierto'
     // Primero los que cuestan dinero; dentro de cada grupo, los más nuevos arriba.
     ? await db.query(
-      `${CON_FACTURA} WHERE a.usuario_id = $1 AND a.estado = 'abierto'
-        ORDER BY (a.tipo = ANY($2)) DESC, a.creado_en DESC, a.id DESC`,
-      [usuarioId, IMPORTANTES],
+      `${CON_FACTURA} WHERE a.usuario_id = $1 AND a.estado = 'abierto' AND ${DE_LA_VERSION}
+        ORDER BY (a.tipo = ANY($3)) DESC, a.creado_en DESC, a.id DESC`,
+      [usuarioId, version, IMPORTANTES],
     )
     : await db.query(
-      `${CON_FACTURA} WHERE a.usuario_id = $1 AND a.estado = 'cerrado' ORDER BY a.cerrado_en DESC, a.id DESC LIMIT ${MAX_CERRADOS}`,
-      [usuarioId],
+      `${CON_FACTURA} WHERE a.usuario_id = $1 AND a.estado = 'cerrado' AND ${DE_LA_VERSION}
+        ORDER BY a.cerrado_en DESC, a.id DESC LIMIT ${MAX_CERRADOS}`,
+      [usuarioId, version],
     );
   return rows.map(deFila);
 }
@@ -70,11 +87,7 @@ export async function cerrarAviso(usuarioId, id) {
     if (!rows.length) throw noEncontrado('Ese aviso no existe');
     throw conflicto('Ese aviso ya estaba cerrado');
   }
-  const { rows: [{ abiertos }] } = await db.query(
-    "SELECT count(*)::int AS abiertos FROM avisos WHERE usuario_id = $1 AND estado = 'abierto'",
-    [usuarioId],
-  );
-  return { abiertos };
+  return { abiertos: await contarAbiertos(usuarioId) };
 }
 
 // RF-42: facturas pendientes desde hace más de ajustes.dias_aviso_pendiente días.

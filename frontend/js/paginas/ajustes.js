@@ -1,6 +1,7 @@
 // Ajustes (RF-04, RF-41, RF-42, RF-62). Responsable: Ana (#24, #27)
 // Idioma, modo claro u oscuro, avisos (cuándo saltan y cuáles llegan por email) y eliminar la cuenta,
 // que abre una ventana en dos pasos: primero guardar la copia de todo y luego confirmar con el email.
+// Versiones de empresa y personal: la sección "Versiones" es de Rodrigo (#50).
 import { iniciarPagina } from '../core/layout.js';
 import { api } from '../core/api.js';
 import { t, idioma, cambiarIdioma } from '../core/i18n.js';
@@ -11,6 +12,25 @@ import { html, seguro, mostrarToast } from '../core/ui.js';
 const textos = {
   es: {
     'ajustes.titulo': 'Ajustes',
+    'ajustes.versiones': 'Versiones',
+    'ajustes.versionesTexto': 'Cuadra tiene dos versiones y cada una guarda sus propias facturas. Cambia de una a otra arriba del todo.',
+    'ajustes.version.empresa': 'Empresa',
+    'ajustes.version.personal': 'Personal',
+    'ajustes.versionActual': 'Ahora estás en',
+    'ajustes.empresaTitulo': 'Versión de empresa',
+    'ajustes.empresaTexto': 'Facturas con NIF para llevar tu contabilidad, deducirte los gastos y preparar los impresos de Hacienda.',
+    'ajustes.empresaSinPerfil': 'Aún no has rellenado tus datos fiscales.',
+    'ajustes.empresaDatos': 'NIF {nif} · régimen {regimen}',
+    'ajustes.regimen.general': 'general',
+    'ajustes.regimen.simplificado': 'simplificado',
+    'ajustes.regimen.recargo_equivalencia': 'recargo de equivalencia',
+    'ajustes.regimen.exento': 'exento',
+    'ajustes.empresaEditar': 'Editar datos fiscales',
+    'ajustes.personalTitulo': 'Versión personal',
+    'ajustes.personalTexto': 'Tickets para llevar el control de tus gastos, sin NIF ni IVA.',
+    'ajustes.presupuesto': 'Presupuesto al mes',
+    'ajustes.presupuestoAyuda': 'Déjalo vacío si no quieres presupuesto.',
+    'ajustes.presupuestoError': 'Escribe un importe mayor que 0.',
     'ajustes.idioma': 'Idioma',
     'ajustes.idiomaTexto': 'El idioma de la web y de los emails que te enviamos.',
     'ajustes.tema': 'Apariencia',
@@ -63,6 +83,25 @@ const textos = {
   },
   en: {
     'ajustes.titulo': 'Settings',
+    'ajustes.versiones': 'Versions',
+    'ajustes.versionesTexto': 'Cuadra has two versions and each one keeps its own invoices. Switch between them at the very top.',
+    'ajustes.version.empresa': 'Business',
+    'ajustes.version.personal': 'Personal',
+    'ajustes.versionActual': "You're now in",
+    'ajustes.empresaTitulo': 'Business version',
+    'ajustes.empresaTexto': 'Invoices with tax IDs to keep your books, deduct your expenses and get your tax forms ready.',
+    'ajustes.empresaSinPerfil': "You haven't filled in your tax details yet.",
+    'ajustes.empresaDatos': 'Tax ID {nif} · {regimen} scheme',
+    'ajustes.regimen.general': 'general',
+    'ajustes.regimen.simplificado': 'simplified',
+    'ajustes.regimen.recargo_equivalencia': 'equivalence surcharge',
+    'ajustes.regimen.exento': 'exempt',
+    'ajustes.empresaEditar': 'Edit tax details',
+    'ajustes.personalTitulo': 'Personal version',
+    'ajustes.personalTexto': 'Receipts to keep track of your spending, without tax IDs or VAT.',
+    'ajustes.presupuesto': 'Monthly budget',
+    'ajustes.presupuestoAyuda': "Leave it empty if you don't want a budget.",
+    'ajustes.presupuestoError': 'Enter an amount greater than 0.',
     'ajustes.idioma': 'Language',
     'ajustes.idiomaTexto': 'The language of the website and of the emails we send you.',
     'ajustes.tema': 'Appearance',
@@ -116,7 +155,12 @@ const textos = {
 };
 
 const { usuario } = await iniciarPagina({ pagina: 'ajustes', privada: true, textos });
-const ajustes = await api('/perfil/ajustes');
+const [ajustes, versiones, perfil] = await Promise.all([
+  api('/perfil/ajustes'),
+  api('/versiones'),
+  api('/perfil').catch(() => null),
+]);
+const VERSIONES = ['empresa', 'personal'];
 
 const IDIOMAS = [['es', 'Español'], ['en', 'English']];
 const TEMAS = ['sistema', 'claro', 'oscuro'];
@@ -160,6 +204,37 @@ document.getElementById('contenido').innerHTML = html`
       <h2 class="titulo-seccion" id="titulo-tema">${t('ajustes.tema')}</h2>
       <p class="texto-2 ajustes-texto">${t('ajustes.temaTexto')}</p>
       ${seguro(selector('tema', TEMAS.map((x) => [x, t(`ajustes.tema.${x}`)]), temaActual))}
+    </section>
+    <section class="tarjeta" id="versiones">
+      <h2 class="titulo-seccion" id="titulo-version">${t('ajustes.versiones')}</h2>
+      <p class="texto-2 ajustes-texto">${t('ajustes.versionesTexto')}</p>
+      <p class="ajustes-etiqueta">${t('ajustes.versionActual')}</p>
+      ${seguro(selector('version', VERSIONES.map((v) => [v, t(`ajustes.version.${v}`)]), versiones.actual))}
+      <div class="ajustes-versiones">
+        <div class="ajustes-version" id="empresa">
+          <h3 class="ajustes-version-titulo">${seguro(icono('facturas'))} ${t('ajustes.empresaTitulo')}</h3>
+          <p class="texto-2">${t('ajustes.empresaTexto')}</p>
+          <p>${perfil?.nif
+            ? t('ajustes.empresaDatos', { nif: perfil.nif, regimen: t(`ajustes.regimen.${perfil.regimen_iva}`) })
+            : t('ajustes.empresaSinPerfil')}</p>
+          <a class="boton boton-secundario" href="/app/perfil">${t('ajustes.empresaEditar')}</a>
+        </div>
+        <form class="ajustes-version formulario" id="personal" novalidate>
+          <h3 class="ajustes-version-titulo">${seguro(icono('euro'))} ${t('ajustes.personalTitulo')}</h3>
+          <p class="texto-2">${t('ajustes.personalTexto')}</p>
+          <div class="campo">
+            <label for="presupuesto_mensual">${t('ajustes.presupuesto')}</label>
+            <div class="ajustes-dias">
+              <input id="presupuesto_mensual" name="presupuesto_mensual" type="text" inputmode="decimal" autocomplete="off"
+                value="${versiones.personal.presupuesto_mensual ?? ''}" aria-describedby="presupuesto-ayuda presupuesto_mensual-error">
+              <span>€</span>
+            </div>
+            <p class="texto-2 ajustes-ayuda" id="presupuesto-ayuda">${t('ajustes.presupuestoAyuda')}</p>
+            <p class="campo-error" id="presupuesto_mensual-error" hidden>${t('ajustes.presupuestoError')}</p>
+          </div>
+          <button type="submit" class="boton boton-principal">${t('comun.guardar')}</button>
+        </form>
+      </div>
     </section>
     <section class="tarjeta">
       <h2 class="titulo-seccion">${t('ajustes.avisos')}</h2>
@@ -244,6 +319,48 @@ document.querySelectorAll('[data-tema]').forEach((boton) => {
       mostrarToast(e.message || t('comun.error'));
     }
   });
+});
+
+// ---------- Versiones de empresa y personal (#50) ----------
+document.querySelectorAll('[data-version]').forEach((boton) => {
+  if (!boton.closest('#versiones')) return;
+  boton.addEventListener('click', async () => {
+    if (boton.getAttribute('aria-pressed') === 'true') return;
+    try {
+      await api('/versiones/actual', { metodo: 'PUT', cuerpo: { version: boton.dataset.version } });
+      location.reload(); // para que la cabecera y el contador de avisos cambien también
+    } catch (e) {
+      mostrarToast(e.message || t('comun.error'));
+    }
+  });
+});
+
+const formPersonal = document.getElementById('personal');
+const inputPresupuesto = document.getElementById('presupuesto_mensual');
+inputPresupuesto.addEventListener('input', () => {
+  document.getElementById('presupuesto_mensual-error').hidden = true;
+  inputPresupuesto.removeAttribute('aria-invalid');
+});
+formPersonal.addEventListener('submit', async (evento) => {
+  evento.preventDefault();
+  const valor = inputPresupuesto.value.trim().replace(/\s|€/g, '').replace(',', '.');
+  if (valor && !(Number(valor) > 0)) {
+    document.getElementById('presupuesto_mensual-error').hidden = false;
+    inputPresupuesto.setAttribute('aria-invalid', 'true');
+    inputPresupuesto.focus();
+    return;
+  }
+  const boton = formPersonal.querySelector('button[type="submit"]');
+  boton.disabled = true;
+  try {
+    const { personal } = await api('/versiones/personal', { metodo: 'PUT', cuerpo: { presupuesto_mensual: valor } });
+    inputPresupuesto.value = personal.presupuesto_mensual ?? '';
+    mostrarToast(t('ajustes.guardado'));
+  } catch (e) {
+    mostrarToast(e.message || t('comun.error'));
+  } finally {
+    boton.disabled = false;
+  }
 });
 
 // Avisos (RF-41, RF-42).

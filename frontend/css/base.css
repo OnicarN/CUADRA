@@ -285,6 +285,20 @@ h1, h2, h3, h4, p { margin: 0; }
 .app-cabecera-centro { flex: 1; display: flex; justify-content: center; }
 .app-cabecera-acciones { display: flex; align-items: center; gap: var(--e-2); margin-left: auto; }
 @media (min-width: 1024px) { .app-cabecera-fila { height: 72px; } }
+/* Selector de versión: empresa o personal (#50). */
+.selector-version { flex: none; }
+.selector-version .pestana[aria-pressed="true"] { background: var(--tarjeta); color: var(--texto); box-shadow: var(--sombra); }
+@media (max-width: 1023px) {
+  .app-cabecera-fila { gap: var(--e-2); }
+  .selector-version .pestana { min-height: 32px; padding: 0 var(--e-3); font-size: 13px; }
+}
+@media (max-width: 379px) { .app-cabecera .logo-nombre { display: none; } }
+/* De 1024 a 1279 no cabe todo: buscador y pestañas más estrechos. */
+@media (min-width: 1024px) and (max-width: 1279px) {
+  .app-cabecera-fila { gap: var(--e-3); }
+  .app-cabecera .pestana { padding: 0 var(--e-3); }
+  .app-cabecera .buscador input { width: 72px; }
+}
 .buscador {
   display: flex; align-items: center; gap: var(--e-2); height: 44px; padding: 0 var(--e-4);
   border: 1px solid var(--borde); border-radius: var(--pildora); background: var(--tarjeta);

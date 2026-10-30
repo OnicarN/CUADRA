@@ -4,11 +4,19 @@
 //
 // Solo cuentan las facturas confirmadas (RF-48) y los importes van en euros (total_eur).
 // La fecha de un gasto es la de la factura; si no tiene, el día en que se subió.
+//
+// Versión de empresa y personal (#50): solo cuentan las facturas de la versión en la que
+// está. La de empresa trae además las casillas de los impresos (impresos.js); la personal,
+// el presupuesto del periodo y nada de IVA ni trimestres.
 import { db } from '../../core/db.js';
 import { peticionIncorrecta } from '../../core/errores.js';
 import { trimestreDe, rangoTrimestre, plazoPresentacion, diasEntre, hoy } from '../../core/fiscal.js';
+import { obtenerVersiones } from '../versiones/servicio.js';
+import { contarAbiertos } from '../avisos/servicio.js';
+import { calcularImpresos } from './impresos.js';
 
 export const PERIODOS = ['mes', 'trimestre', 'anio'];
+const MESES = { mes: 1, trimestre: 3, anio: 12 };
 const FECHA_GASTO = 'COALESCE(f.fecha, f.creado_en::date)';
 const pad = (n) => String(n).padStart(2, '0');
 const redondear = (n) => Math.round(Number(n) * 100) / 100;
@@ -52,10 +60,13 @@ export async function calcularPanel(usuarioId, filtros) {
   const actual = trimestreDe(hoy());
   const plazoCierre = plazoPresentacion(actual.anio, actual.trimestre);
 
+  const versiones = await obtenerVersiones(usuarioId);
+  const version = versiones.actual;
+  // La versión va como texto fijo: solo puede ser 'empresa' o 'personal' (CHECK de la tabla).
   const confirmadasEn = (desde, hasta) =>
-    `f.usuario_id = $1 AND f.estado = 'confirmada' AND ${FECHA_GASTO} BETWEEN ${desde}::date AND ${hasta}::date`;
+    `f.usuario_id = $1 AND f.version = '${version}' AND f.estado = 'confirmada' AND ${FECHA_GASTO} BETWEEN ${desde}::date AND ${hasta}::date`;
 
-  const [resumen, anterior, categorias, iva, pendientes, avisos, clientes] = await Promise.all([
+  const [resumen, anterior, categorias, iva, pendientes, avisosAbiertos, clientes, impresos] = await Promise.all([
     db.query(
       `SELECT COUNT(*)::int AS num, COALESCE(SUM(f.total_eur), 0) AS gasto FROM facturas f WHERE ${confirmadasEn('$2', '$3')}`,
       [usuarioId, rango.desde, rango.hasta],
@@ -78,8 +89,8 @@ export async function calcularPanel(usuarioId, filtros) {
          FROM facturas f WHERE ${confirmadasEn('$2', '$3')}`,
       [usuarioId, trimestreActual.desde, trimestreActual.hasta],
     ),
-    db.query(`SELECT COUNT(*)::int AS n FROM facturas WHERE usuario_id = $1 AND estado = 'pendiente'`, [usuarioId]),
-    db.query(`SELECT COUNT(*)::int AS n FROM avisos WHERE usuario_id = $1 AND estado = 'abierto'`, [usuarioId]),
+    db.query(`SELECT COUNT(*)::int AS n FROM facturas WHERE usuario_id = $1 AND estado = 'pendiente' AND version = $2`, [usuarioId, version]),
+    contarAbiertos(usuarioId, version),
     // RF-47: gasto por cliente o proyecto, de las facturas asociadas a un evento del calendario.
     db.query(
       `SELECT COALESCE(NULLIF(trim(e.cliente), ''), e.titulo) AS cliente, SUM(f.total_eur) AS total, COUNT(*)::int AS num
@@ -88,11 +99,14 @@ export async function calcularPanel(usuarioId, filtros) {
         GROUP BY 1 ORDER BY total DESC, cliente`,
       [usuarioId, rango.desde, rango.hasta],
     ),
+    version === 'empresa' ? calcularImpresos(usuarioId) : null,
   ]);
 
   const gastoTotal = redondear(resumen.rows[0].gasto);
   const gastoAnterior = redondear(anterior.rows[0].gasto);
-  return {
+  const mensual = versiones.personal.presupuesto_mensual;
+  const comun = {
+    version,
     periodo: { tipo: periodo, fecha, desde: rango.desde, hasta: rango.hasta, anterior: rango.anterior },
     numFacturas: resumen.rows[0].num,
     gastoTotal,
@@ -103,12 +117,25 @@ export async function calcularPanel(usuarioId, filtros) {
     porCategoria: categorias.rows.map((c) => ({
       id: c.id, clave: c.clave, categoria: c.categoria, total: redondear(c.total), num: c.num,
     })),
+    pendientes: pendientes.rows[0].n,
+    avisosAbiertos,
+  };
+  if (version === 'personal') {
+    // El presupuesto es mensual; para el trimestre o el año se multiplica.
+    const presupuesto = mensual ? redondear(mensual * MESES[periodo]) : null;
+    return {
+      ...comun,
+      presupuesto: presupuesto && { total: presupuesto, mensual, restante: redondear(presupuesto - gastoTotal) },
+      diasPeriodo: diasEntre(rango.desde, rango.hasta) + 1,
+    };
+  }
+  return {
+    ...comun,
     trimestre: { anio, trimestre, desde: trimestreActual.desde, hasta: trimestreActual.hasta, plazo },
     ivaSoportadoTrimestre: redondear(iva.rows[0].iva),
-    pendientes: pendientes.rows[0].n,
-    avisosAbiertos: avisos.rows[0].n,
     diasCierreTrimestre: diasEntre(hoy(), plazoCierre),
     cierre: { anio: actual.anio, trimestre: actual.trimestre, plazo: plazoCierre },
     porCliente: clientes.rows.map((c) => ({ cliente: c.cliente, total: redondear(c.total), num: c.num })),
+    impresos,
   };
 }
