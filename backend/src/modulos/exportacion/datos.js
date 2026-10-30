@@ -16,13 +16,24 @@ export async function facturasConfirmadas(usuarioId, { desde, hasta, categorias 
     params.push(categorias);
     filtroCategorias = `AND f.categoria_id = ANY($${params.length}::int[])`;
   }
+  return consultarFacturas(
+    `f.usuario_id = $1 AND f.estado = 'confirmada' AND f.fecha BETWEEN $2::text::date AND $3::text::date ${filtroCategorias}`,
+    params,
+  );
+}
+
+// Todas las facturas del usuario en los estados indicados, sin límite de fechas (copia antes de la baja, RF-62).
+export async function facturasPorEstado(usuarioId, estados) {
+  return consultarFacturas('f.usuario_id = $1 AND f.estado = ANY($2::text[])', [usuarioId, estados]);
+}
+
+async function consultarFacturas(condicion, params) {
   const { rows: facturas } = await db.query(
     `SELECT f.id, f.fecha, f.emisor, f.nif_emisor, f.nif_receptor, f.numero, f.base_imponible, f.cuota_iva,
             f.total, f.moneda, f.tipo_cambio, f.total_eur, f.categoria_id, c.nombre AS categoria
        FROM facturas f LEFT JOIN categorias c ON c.id = f.categoria_id
-      WHERE f.usuario_id = $1 AND f.estado = 'confirmada'
-        AND f.fecha BETWEEN $2::text::date AND $3::text::date ${filtroCategorias}
-      ORDER BY f.fecha, f.id`,
+      WHERE ${condicion}
+      ORDER BY f.fecha NULLS LAST, f.id`,
     params,
   );
   if (!facturas.length) return [];

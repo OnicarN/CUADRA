@@ -16,13 +16,13 @@
 //
 // /registro acepta también { idioma } para mandar el email de verificación en ese idioma.
 // /entrar admite 10 intentos fallidos cada 15 minutos por IP y email (429 después).
-// DELETE /cuenta               { confirmacion }              RF-62             (pendiente, #27)
+// DELETE /cuenta               { confirmacion: email }       RF-62             (hecho, #27)
 import crypto from 'node:crypto';
 import { Router } from 'express';
 import { db } from '../../core/db.js';
 import { config } from '../../config.js';
 import { cifrarContrasena, comprobarContrasena, iniciarSesion, cerrarSesion, requiereSesion, leerSesion } from '../../core/auth.js';
-import { peticionIncorrecta, noAutorizado, conflicto, pendiente, ErrorHttp } from '../../core/errores.js';
+import { peticionIncorrecta, noAutorizado, conflicto, ErrorHttp } from '../../core/errores.js';
 import { emailValido } from '../../core/validacion.js';
 import { DIAS_PRUEBA } from '../suscripcion/planes.js';
 import { crearToken, consumirToken, TIPOS_TOKEN } from './tokens.js';
@@ -242,6 +242,43 @@ rutas.get('/google/callback', async (req, res) => {
     res.redirect(`/entrar?error=${error.estado === 409 ? 'google_email' : 'google'}`);
   }
 });
-rutas.delete('/cuenta', requiereSesion, () => { throw pendiente('#27'); });
+// RF-62. Elimina la cuenta. Para confirmar hay que escribir el email de la cuenta. Antes se cancela
+// la suscripción de Stripe, si la hay, para que no se siga cobrando. Después basta con borrar el
+// usuario: todas las tablas cuelgan de usuarios con ON DELETE CASCADE (facturas, originales, avisos,
+// perfil, suscripción, Google Calendar…).
+// Pendiente legal: Hacienda puede pedir los justificantes durante años. Por eso Ajustes ofrece antes
+// descargar la copia de todo (GET /api/exportacion/todo).
+rutas.delete('/cuenta', requiereSesion, async (req, res) => {
+  const { rows: [usuario] } = await db.query(
+    `SELECT u.id, u.email, s.stripe_subscription_id
+       FROM usuarios u LEFT JOIN suscripciones s ON s.usuario_id = u.id WHERE u.id = $1`,
+    [req.usuario.id],
+  );
+  if (!usuario) throw noAutorizado();
+  const confirmacion = String(req.body?.confirmacion ?? '').trim().toLowerCase();
+  if (confirmacion !== usuario.email.toLowerCase()) {
+    throw peticionIncorrecta('Escribe el email de tu cuenta para confirmar', { codigo: 'confirmacion' });
+  }
+  if (usuario.stripe_subscription_id) await cancelarSuscripcionStripe(usuario.stripe_subscription_id);
+  await db.query('DELETE FROM usuarios WHERE id = $1', [usuario.id]);
+  cerrarSesion(res);
+  res.status(204).end();
+});
+
+async function cancelarSuscripcionStripe(suscripcionId) {
+  if (!config.stripe.secretKey) {
+    console.warn(`Sin STRIPE_SECRET_KEY: la suscripción ${suscripcionId} no se ha cancelado en Stripe.`);
+    return;
+  }
+  const { default: Stripe } = await import('stripe');
+  try {
+    await new Stripe(config.stripe.secretKey).subscriptions.cancel(suscripcionId);
+  } catch (error) {
+    if (error.code === 'resource_missing') return; // ya no existe en Stripe: nada que cancelar
+    // Mejor no borrar la cuenta que dejar a alguien sin cuenta y con la suscripción cobrándose.
+    console.error('No se pudo cancelar la suscripción de Stripe:', error.message);
+    throw new ErrorHttp(502, 'No hemos podido cancelar tu suscripción. Inténtalo de nuevo en unos minutos.');
+  }
+}
 
 export default rutas;

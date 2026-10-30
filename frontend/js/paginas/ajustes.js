@@ -1,9 +1,11 @@
-// Ajustes (RF-04, RF-41, RF-42). Responsable: Ana (#24)
-// Idioma, modo claro u oscuro y avisos: cuándo saltan y cuáles llegan por email.
+// Ajustes (RF-04, RF-41, RF-42, RF-62). Responsable: Ana (#24, #27)
+// Idioma, modo claro u oscuro, avisos (cuándo saltan y cuáles llegan por email) y eliminar la cuenta,
+// que abre una ventana en dos pasos: primero guardar la copia de todo y luego confirmar con el email.
 import { iniciarPagina } from '../core/layout.js';
 import { api } from '../core/api.js';
 import { t, idioma, cambiarIdioma } from '../core/i18n.js';
 import { cambiarTema, temaGuardado } from '../core/tema.js';
+import { icono } from '../core/iconos.js';
 import { html, seguro, mostrarToast } from '../core/ui.js';
 
 const textos = {
@@ -34,6 +36,30 @@ const textos = {
     'aviso.texto_correo': 'Factura desde el texto del correo',
     'aviso.sin_leer': 'Facturas sin leer',
     'aviso.correo_no_autorizado': 'Correo no autorizado',
+    'baja.titulo': 'Eliminar cuenta',
+    'baja.texto': 'Borra tu cuenta y todas tus facturas. Antes podrás descargar una copia de todo.',
+    'baja.boton': 'Eliminar cuenta',
+    'baja.paso': 'Paso {n} de 2',
+    'baja.guardarTitulo': 'Antes de irte, guarda tus facturas',
+    'baja.guardarTexto': 'Hacienda puede pedirte las facturas y los justificantes durante varios años. Cuando elimines la cuenta, Cuadra no podrá recuperarlas.',
+    'baja.contenido': 'La copia es un ZIP con:',
+    'baja.contenidoExcel': 'Un Excel con tus facturas confirmadas y otro con las que no habías confirmado.',
+    'baja.contenidoOriginales': 'Todas las fotos y PDFs originales, por año y trimestre.',
+    'baja.descargar': 'Descargar copia (ZIP)',
+    'baja.descargando': 'Preparando la copia…',
+    'baja.descargado': 'Copia descargada',
+    'baja.tengoCopia': 'Ya tengo mis facturas guardadas o no las necesito',
+    'baja.continuar': 'Continuar',
+    'baja.confirmarTitulo': '¿Eliminar tu cuenta para siempre?',
+    'baja.seBorra': 'Se borrará, sin poder deshacerlo:',
+    'baja.borraFacturas': 'Todas tus facturas y sus originales',
+    'baja.borraPerfil': 'Tu perfil fiscal, tus avisos y tus ajustes',
+    'baja.borraConexiones': 'Tu correo de Cuadra y la conexión con Google Calendar',
+    'baja.borraPlan': 'Tu plan: si es de pago, se cancela y no se te cobrará más',
+    'baja.escribeEmail': 'Para confirmar, escribe tu email ({email})',
+    'baja.eliminar': 'Eliminar mi cuenta',
+    'baja.atras': 'Atrás',
+    'baja.noCoincide': 'El email no coincide con el de tu cuenta.',
   },
   en: {
     'ajustes.titulo': 'Settings',
@@ -62,6 +88,30 @@ const textos = {
     'aviso.texto_correo': 'Invoice from email text',
     'aviso.sin_leer': 'Unread invoices',
     'aviso.correo_no_autorizado': 'Unauthorised email',
+    'baja.titulo': 'Delete account',
+    'baja.texto': 'Deletes your account and all your invoices. You can download a copy of everything first.',
+    'baja.boton': 'Delete account',
+    'baja.paso': 'Step {n} of 2',
+    'baja.guardarTitulo': 'Before you go, keep your invoices',
+    'baja.guardarTexto': 'The Spanish Tax Agency can ask for your invoices and receipts for several years. Once you delete your account, Cuadra cannot recover them.',
+    'baja.contenido': 'The copy is a ZIP file with:',
+    'baja.contenidoExcel': 'An Excel file with your confirmed invoices and another with the ones you had not confirmed.',
+    'baja.contenidoOriginales': 'All the original photos and PDFs, sorted by year and quarter.',
+    'baja.descargar': 'Download copy (ZIP)',
+    'baja.descargando': 'Preparing the copy…',
+    'baja.descargado': 'Copy downloaded',
+    'baja.tengoCopia': "I've saved my invoices or I don't need them",
+    'baja.continuar': 'Continue',
+    'baja.confirmarTitulo': 'Delete your account forever?',
+    'baja.seBorra': 'This will be deleted and cannot be undone:',
+    'baja.borraFacturas': 'All your invoices and their originals',
+    'baja.borraPerfil': 'Your tax profile, alerts and settings',
+    'baja.borraConexiones': 'Your Cuadra email address and your Google Calendar connection',
+    'baja.borraPlan': "Your plan: if it's a paid one, it is cancelled and you won't be charged again",
+    'baja.escribeEmail': 'To confirm, type your email ({email})',
+    'baja.eliminar': 'Delete my account',
+    'baja.atras': 'Back',
+    'baja.noCoincide': "The email doesn't match your account's.",
   },
 };
 
@@ -121,7 +171,57 @@ document.getElementById('contenido').innerHTML = html`
         <button type="submit" class="boton boton-principal">${t('comun.guardar')}</button>
       </form>
     </section>
-  </div>`;
+    <section class="tarjeta ajustes-baja" aria-labelledby="titulo-baja">
+      <div>
+        <h2 class="titulo-seccion" id="titulo-baja">${t('baja.titulo')}</h2>
+        <p class="texto-2">${t('baja.texto')}</p>
+      </div>
+      <button type="button" class="boton boton-peligro" id="abrir-baja" aria-haspopup="dialog">${t('baja.boton')}</button>
+    </section>
+  </div>
+
+  <dialog class="ajustes-dialogo" id="dialogo-baja" aria-labelledby="titulo-paso-1">
+    <section class="ajustes-paso" id="paso-1">
+      <p class="ajustes-paso-numero">${t('baja.paso', { n: 1 })}</p>
+      <h2 class="titulo-seccion" id="titulo-paso-1">${t('baja.guardarTitulo')}</h2>
+      <div class="banner banner-aviso">${seguro(icono('alerta'))}<span class="banner-texto">${t('baja.guardarTexto')}</span></div>
+      <p>${t('baja.contenido')}</p>
+      <ul class="ajustes-lista">
+        <li>${t('baja.contenidoExcel')}</li>
+        <li>${t('baja.contenidoOriginales')}</li>
+      </ul>
+      <button type="button" class="boton boton-principal" id="descargar-copia">${seguro(icono('descargar'))}<span>${t('baja.descargar')}</span></button>
+      <label class="ajustes-casilla">
+        <input type="checkbox" id="tengo-copia">
+        <span>${t('baja.tengoCopia')}</span>
+      </label>
+      <div class="ajustes-dialogo-botones">
+        <button type="button" class="boton boton-secundario" data-cerrar>${t('comun.cancelar')}</button>
+        <button type="button" class="boton boton-secundario" id="ir-paso-2" disabled>${t('baja.continuar')}</button>
+      </div>
+    </section>
+
+    <form class="ajustes-paso" id="paso-2" novalidate hidden>
+      <p class="ajustes-paso-numero">${t('baja.paso', { n: 2 })}</p>
+      <h2 class="titulo-seccion" id="titulo-paso-2">${t('baja.confirmarTitulo')}</h2>
+      <p>${t('baja.seBorra')}</p>
+      <ul class="ajustes-lista">
+        <li>${t('baja.borraFacturas')}</li>
+        <li>${t('baja.borraPerfil')}</li>
+        <li>${t('baja.borraConexiones')}</li>
+        <li>${t('baja.borraPlan')}</li>
+      </ul>
+      <div class="campo">
+        <label for="confirmacion">${t('baja.escribeEmail', { email: usuario.email })}</label>
+        <input id="confirmacion" type="email" autocomplete="off" spellcheck="false" autocapitalize="none" aria-describedby="confirmacion-error">
+        <p class="campo-error" id="confirmacion-error" role="alert" hidden></p>
+      </div>
+      <div class="ajustes-dialogo-botones">
+        <button type="button" class="boton boton-secundario" id="volver-paso-1">${t('baja.atras')}</button>
+        <button type="submit" class="boton boton-peligro" disabled>${t('baja.eliminar')}</button>
+      </div>
+    </form>
+  </dialog>`;
 
 // Idioma (RF-04): se guarda en la cuenta y en el navegador, y se recarga la página.
 document.querySelectorAll('[data-idioma]').forEach((boton) => {
@@ -178,5 +278,92 @@ formAvisos.addEventListener('submit', async (evento) => {
     mostrarToast(e.message || t('comun.error'));
   } finally {
     boton.disabled = false;
+  }
+});
+
+// ---------- Eliminar la cuenta (RF-62) ----------
+const dialogo = document.getElementById('dialogo-baja');
+const paso1 = document.getElementById('paso-1');
+const paso2 = document.getElementById('paso-2');
+const tengoCopia = document.getElementById('tengo-copia');
+const irPaso2 = document.getElementById('ir-paso-2');
+const inputConfirmacion = document.getElementById('confirmacion');
+const errorConfirmacion = document.getElementById('confirmacion-error');
+const botonEliminar = paso2.querySelector('button[type="submit"]');
+const coincide = () => inputConfirmacion.value.trim().toLowerCase() === usuario.email.toLowerCase();
+
+function irAPaso(n) {
+  paso1.hidden = n !== 1;
+  paso2.hidden = n !== 2;
+  dialogo.setAttribute('aria-labelledby', `titulo-paso-${n}`);
+  (n === 1 ? document.getElementById('descargar-copia') : inputConfirmacion).focus();
+}
+
+document.getElementById('abrir-baja').addEventListener('click', () => {
+  tengoCopia.checked = false;
+  irPaso2.disabled = true;
+  paso2.reset();
+  botonEliminar.disabled = true;
+  errorConfirmacion.hidden = true;
+  dialogo.showModal();
+  irAPaso(1);
+});
+dialogo.querySelectorAll('[data-cerrar]').forEach((b) => b.addEventListener('click', () => dialogo.close()));
+// Clic fuera de la ventana: se cierra.
+dialogo.addEventListener('click', (evento) => { if (evento.target === dialogo) dialogo.close(); });
+
+tengoCopia.addEventListener('change', () => { irPaso2.disabled = !tengoCopia.checked; });
+irPaso2.addEventListener('click', () => irAPaso(2));
+document.getElementById('volver-paso-1').addEventListener('click', () => irAPaso(1));
+
+// Paso 1: descargar la copia. Al terminar, se marca sola la casilla.
+document.getElementById('descargar-copia').addEventListener('click', async (evento) => {
+  const boton = evento.currentTarget;
+  const texto = boton.querySelector('span');
+  boton.disabled = true;
+  texto.textContent = t('baja.descargando');
+  try {
+    const respuesta = await fetch('/api/exportacion/todo', { credentials: 'same-origin' });
+    if (!respuesta.ok) throw new Error((await respuesta.json().catch(() => ({}))).error || t('comun.error'));
+    const nombre = /filename="([^"]+)"/.exec(respuesta.headers.get('content-disposition') || '')?.[1] || 'cuadra.zip';
+    const enlace = document.createElement('a');
+    enlace.href = URL.createObjectURL(await respuesta.blob());
+    enlace.download = nombre;
+    document.body.append(enlace);
+    enlace.click();
+    enlace.remove();
+    setTimeout(() => URL.revokeObjectURL(enlace.href), 10000);
+    tengoCopia.checked = true;
+    irPaso2.disabled = false;
+    mostrarToast(t('baja.descargado'));
+  } catch (e) {
+    mostrarToast(e.message || t('comun.error'));
+  } finally {
+    boton.disabled = false;
+    texto.textContent = t('baja.descargar');
+  }
+});
+
+// Paso 2: escribir el email y eliminar.
+inputConfirmacion.addEventListener('input', () => {
+  botonEliminar.disabled = !coincide();
+  errorConfirmacion.hidden = true;
+});
+
+paso2.addEventListener('submit', async (evento) => {
+  evento.preventDefault();
+  if (!coincide()) {
+    errorConfirmacion.textContent = t('baja.noCoincide');
+    errorConfirmacion.hidden = false;
+    return;
+  }
+  botonEliminar.disabled = true;
+  try {
+    await api('/auth/cuenta', { metodo: 'DELETE', cuerpo: { confirmacion: inputConfirmacion.value } });
+    location.replace('/');
+  } catch (e) {
+    errorConfirmacion.textContent = e.message || t('comun.error');
+    errorConfirmacion.hidden = false;
+    botonEliminar.disabled = false;
   }
 });
