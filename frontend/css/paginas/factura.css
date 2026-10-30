@@ -105,3 +105,30 @@ button.factura-valor:hover .factura-lapiz { opacity: 1; }
 }
 .factura-dialogo::backdrop { background: rgba(0, 0, 0, .45); }
 .factura-dialogo-botones { display: flex; justify-content: flex-end; flex-wrap: wrap; gap: var(--e-3); margin-top: var(--e-6); }
+
+/* ---------- Posible duplicado: las dos facturas juntas (RF-36) ---------- */
+.factura-duplicado { margin-bottom: var(--hueco); border: 1px solid var(--rojo-suave); scroll-margin-top: 96px; }
+.factura-dup-texto { margin-top: var(--e-1); }
+.factura-dup-rejilla { display: grid; gap: var(--hueco); grid-template-columns: 1fr; margin-top: var(--e-4); }
+@media (min-width: 768px) { .factura-dup-rejilla { grid-template-columns: 1fr 1fr; } }
+.factura-dup-columna { display: flex; flex-direction: column; gap: var(--e-3); min-width: 0; }
+.factura-dup-cabecera { display: flex; align-items: center; justify-content: space-between; gap: var(--e-2); }
+.factura-dup-cabecera h3 { font-size: 16px; font-weight: 600; }
+.factura-visor-mini { height: 240px; min-height: 0; }
+.factura-imagen.factura-visor-mini { height: auto; max-height: 240px; }
+@media (min-width: 1024px) {
+  .factura-visor-mini { height: 320px; }
+  .factura-imagen.factura-visor-mini { height: auto; max-height: 320px; }
+}
+.factura-dup-datos { margin: 0; }
+.factura-dup-datos div {
+  display: flex; justify-content: space-between; gap: var(--e-3); padding: var(--e-2) 0; border-bottom: 1px solid var(--borde);
+}
+.factura-dup-datos dt { font-size: 14px; color: var(--texto-2); flex: none; }
+.factura-dup-datos dd { margin: 0; text-align: right; min-width: 0; overflow-wrap: anywhere; display: inline-flex; align-items: center; gap: var(--e-1); }
+.factura-dup-datos .factura-coincide dd { font-weight: 600; }
+.factura-dup-datos dd svg { width: 16px; height: 16px; color: var(--rojo); flex: none; }
+.factura-dup-abrir { display: inline-flex; align-items: center; gap: var(--e-1); min-height: 44px; align-self: flex-start; }
+.factura-dup-abrir svg { width: 18px; height: 18px; }
+.factura-dup-botones { display: flex; flex-wrap: wrap; align-items: center; gap: var(--e-3); margin-top: var(--e-4); }
+@media (max-width: 767px) { .factura-dup-botones .boton { flex: 1; } }

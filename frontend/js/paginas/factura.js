@@ -77,6 +77,17 @@ const textos = {
     'factura.aviso.pendiente_revisar': 'Esta factura lleva días pendiente de revisar.',
     'factura.aviso.texto_correo': 'Esta factura sale del texto de un correo, no de un archivo. Revisa bien los datos.',
     'factura.aviso.otro': 'Hay algo que revisar en esta factura.',
+    'factura.dup.titulo': '¿Es la misma factura?',
+    'factura.dup.texto': 'Se parece mucho a una que ya tenías. Compáralas y decide qué hacer con esta.',
+    'factura.dup.esta': 'Esta factura',
+    'factura.dup.otra': 'La que ya tenías',
+    'factura.dup.abrirOtra': 'Abrir la que ya tenías',
+    'factura.dup.coincide': 'coincide',
+    'factura.dup.descartar': 'Descartar esta',
+    'factura.dup.guardar': 'Guardar igualmente',
+    'factura.dup.preguntaDescartar': 'Se borrará esta factura y su original, y te quedas con la que ya tenías. ¿Descartarla?',
+    'factura.dup.guardada': 'Guardada. No te volveremos a avisar por esta.',
+    'factura.dup.confirmada': 'Esta ya está confirmada: si de verdad está repetida, reábrela para poder descartarla.',
   },
   en: {
     'factura.titulo': 'Review invoice',
@@ -145,6 +156,17 @@ const textos = {
     'factura.aviso.pendiente_revisar': 'This invoice has been waiting for review for days.',
     'factura.aviso.texto_correo': 'This invoice comes from the text of an email, not a file. Check the details carefully.',
     'factura.aviso.otro': 'There is something to check on this invoice.',
+    'factura.dup.titulo': 'Is it the same invoice?',
+    'factura.dup.texto': 'It looks a lot like one you already had. Compare them and decide what to do with this one.',
+    'factura.dup.esta': 'This invoice',
+    'factura.dup.otra': 'The one you already had',
+    'factura.dup.abrirOtra': 'Open the one you already had',
+    'factura.dup.coincide': 'matches',
+    'factura.dup.descartar': 'Discard this one',
+    'factura.dup.guardar': 'Keep it anyway',
+    'factura.dup.preguntaDescartar': 'This invoice and its original will be deleted, and you keep the one you already had. Discard it?',
+    'factura.dup.guardada': "Kept. We won't warn you about this one again.",
+    'factura.dup.confirmada': 'This one is already confirmed: if it really is a duplicate, reopen it to be able to discard it.',
   },
 };
 
@@ -175,6 +197,7 @@ contenido.innerHTML = html`
   <div class="cabecera-pagina" id="cabecera"><h1 class="titulo-pagina">${t('factura.titulo')}</h1></div>
   <div class="pila factura-banners" id="banners"></div>
   <div id="sugerencia-evento"></div>
+  <section class="tarjeta factura-duplicado" id="duplicado" aria-labelledby="titulo-duplicado" hidden></section>
   <div class="dos-columnas factura-cuerpo" id="cuerpo" hidden>
     <section class="tarjeta factura-original" id="original" aria-label="${t('factura.original')}"></section>
     <div class="pila">
@@ -274,7 +297,7 @@ function pintarBanners() {
     const texto = t(clave) === clave ? t('factura.aviso.otro') : t(clave);
     if (aviso.tipo === 'duplicado' && factura.duplicado_de) {
       const otra = factura.duplicado_de;
-      banners.push(html`<a class="banner banner-aviso" href="/app/factura?id=${otra.id}">${seguro(icono('alerta'))}
+      banners.push(html`<a class="banner banner-aviso" href="#duplicado">${seguro(icono('alerta'))}
         <span class="banner-texto">${texto} <strong>${otra.emisor || ''} · ${dinero(otra.total, otra.moneda)} · ${fecha(otra.fecha)}</strong></span>
         ${seguro(icono('flecha', 'banner-flecha'))}</a>`);
     } else {
@@ -284,20 +307,25 @@ function pintarBanners() {
   $('banners').innerHTML = banners.join('');
 }
 
+// Vista del original de una factura (PDF, foto o un aviso si el formato no se puede ver).
+function vistaOriginal(f, clase = '') {
+  const url = `/api/facturas/${f.id}/original`;
+  const original = f.original;
+  if (!original) return vacio({ icono: 'archivo', texto: t('factura.sinOriginal') });
+  if (original.tipo_mime === 'application/pdf') {
+    return html`<iframe class="factura-visor ${clase}" src="${url}" title="${t('factura.original')}: ${original.nombre_archivo}"></iframe>`;
+  }
+  if (['image/jpeg', 'image/png'].includes(original.tipo_mime)) {
+    return html`<img class="factura-visor factura-imagen ${clase}" src="${url}" alt="${t('factura.original')}: ${original.nombre_archivo}">`;
+  }
+  return vacio({ icono: 'archivo', texto: t('factura.noSeVe') });
+}
+
 // El original solo se pinta una vez: así el PDF no se recarga con cada cambio.
 function pintarOriginal() {
   const url = `/api/facturas/${factura.id}/original`;
   const original = factura.original;
-  let vista;
-  if (!original) {
-    vista = vacio({ icono: 'archivo', texto: t('factura.sinOriginal') });
-  } else if (original.tipo_mime === 'application/pdf') {
-    vista = html`<iframe class="factura-visor" src="${url}" title="${t('factura.original')}: ${original.nombre_archivo}"></iframe>`;
-  } else if (['image/jpeg', 'image/png'].includes(original.tipo_mime)) {
-    vista = html`<img class="factura-visor factura-imagen" src="${url}" alt="${t('factura.original')}: ${original.nombre_archivo}">`;
-  } else {
-    vista = vacio({ icono: 'archivo', texto: t('factura.noSeVe') });
-  }
+  const vista = vistaOriginal(factura);
   $('original').innerHTML = html`
     <div class="tarjeta-cabecera">
       <h2 class="titulo-seccion">${t('factura.original')}</h2>
@@ -374,9 +402,106 @@ function pintarHistorial() {
       : seguro(html`<p class="texto-2">${t('factura.sinCambios')}</p>`)}`;
 }
 
+// ---------- Posible duplicado (RF-36): las dos facturas juntas y el usuario decide ----------
+
+const CAMPOS_DUPLICADO = ['emisor', 'nif_emisor', 'numero', 'fecha', 'hora', 'total'];
+const otras = new Map(); // facturas con las que se compara, para no pedirlas cada vez
+let duplicadoPintado = null;
+
+function igual(campo, a, b) {
+  const x = a[campo];
+  const y = b[campo];
+  if (x === null || x === undefined || y === null || y === undefined) return false;
+  if (campo === 'total') return Number(x) === Number(y);
+  if (campo === 'hora') return String(x).slice(0, 5) === String(y).slice(0, 5);
+  const limpio = (v) => String(v).toLowerCase().replace(campo === 'nif_emisor' ? /[\s.-]/g : /\s+/g, campo === 'nif_emisor' ? '' : ' ').trim();
+  return limpio(x) === limpio(y);
+}
+
+function datosDuplicado(f, otra) {
+  return html`<dl class="factura-dup-datos">${CAMPOS_DUPLICADO.map((campo) => {
+    const coincide = otra && igual(campo, f, otra);
+    return seguro(html`<div class="${coincide ? 'factura-coincide' : ''}">
+      <dt>${t(`factura.campo.${campo}`)}</dt>
+      <dd class="importe">${textoDe(campo, f[campo], f) || '—'}${coincide
+        ? seguro(html`${seguro(icono('check'))}<span class="sr-only"> (${t('factura.dup.coincide')})</span>`) : ''}</dd>
+    </div>`);
+  })}</dl>`;
+}
+
+async function pintarDuplicado() {
+  const seccion = $('duplicado');
+  const resumen = factura.duplicado_de;
+  if (!resumen || factura.duplicado_aceptado) {
+    seccion.hidden = true;
+    seccion.innerHTML = '';
+    duplicadoPintado = null;
+    return;
+  }
+  if (!otras.has(resumen.id)) {
+    // Si no se puede cargar entera, nos apañamos con el resumen que trae la factura.
+    otras.set(resumen.id, await api(`/facturas/${resumen.id}`).catch(() => ({ ...resumen, original: null })));
+  }
+  const otra = otras.get(resumen.id);
+  if (factura.duplicado_de?.id !== resumen.id) return; // cambió mientras cargaba
+
+  // Los originales solo se pintan cuando cambia la pareja; los datos, siempre.
+  if (duplicadoPintado !== resumen.id) {
+    seccion.innerHTML = html`
+      <h2 class="titulo-seccion" id="titulo-duplicado">${t('factura.dup.titulo')}</h2>
+      <p class="texto-2 factura-dup-texto">${t('factura.dup.texto')}</p>
+      <div class="factura-dup-rejilla">
+        <div class="factura-dup-columna">
+          <div class="factura-dup-cabecera"><h3>${t('factura.dup.esta')}</h3>${seguro(etiquetaEstado(factura.estado))}</div>
+          ${seguro(vistaOriginal(factura, 'factura-visor-mini'))}
+          <div id="dup-datos-esta"></div>
+        </div>
+        <div class="factura-dup-columna">
+          <div class="factura-dup-cabecera"><h3>${t('factura.dup.otra')}</h3>${seguro(etiquetaEstado(otra.estado))}</div>
+          ${seguro(vistaOriginal(otra, 'factura-visor-mini'))}
+          <div id="dup-datos-otra"></div>
+          <a class="boton-texto factura-dup-abrir" href="/app/factura?id=${otra.id}">${t('factura.dup.abrirOtra')}${seguro(icono('flecha'))}</a>
+        </div>
+      </div>
+      <div class="factura-dup-botones" id="dup-botones"></div>`;
+    duplicadoPintado = resumen.id;
+  }
+  $('dup-datos-esta').innerHTML = datosDuplicado(factura, otra);
+  $('dup-datos-otra').innerHTML = datosDuplicado(otra, factura);
+  $('dup-botones').innerHTML = factura.estado === 'confirmada'
+    ? html`<p class="texto-2">${t('factura.dup.confirmada')}</p>
+      <button type="button" class="boton boton-secundario" data-duplicado="guardar">${t('factura.dup.guardar')}</button>`
+    : html`<button type="button" class="boton boton-peligro" data-duplicado="descartar">${seguro(icono('papelera'))}${t('factura.dup.descartar')}</button>
+      <button type="button" class="boton boton-secundario" data-duplicado="guardar">${t('factura.dup.guardar')}</button>`;
+  seccion.hidden = false;
+}
+
+$('duplicado').addEventListener('click', async (evento) => {
+  const boton = evento.target.closest('[data-duplicado]');
+  if (!boton || !factura?.duplicado_de) return;
+  const accion = boton.dataset.duplicado;
+  const otraId = factura.duplicado_de.id;
+  if (accion === 'descartar' && !(await preguntar(t('factura.dup.preguntaDescartar'), t('factura.dup.descartar'), true))) return;
+  boton.disabled = true;
+  try {
+    await api(`/facturas/${factura.id}/duplicado`, { metodo: 'POST', cuerpo: { accion } });
+    if (accion === 'descartar') {
+      location.href = `/app/factura?id=${otraId}`;
+      return;
+    }
+    mostrarToast(t('factura.dup.guardada'));
+    await recargar();
+  } catch (error) {
+    boton.disabled = false;
+    mostrarToast(error.message || t('comun.error'));
+    await recargar();
+  }
+});
+
 function pintarTodo({ original = false } = {}) {
   pintarCabecera();
   pintarBanners();
+  pintarDuplicado();
   if (original) pintarOriginal();
   pintarDatos();
   pintarIva();
