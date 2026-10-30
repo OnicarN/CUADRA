@@ -1,0 +1,15 @@
+/* Privacidad (#51). Responsable: Ana */
+.privacidad { max-width: 760px; }
+.privacidad-cabecera {
+  display: flex; flex-direction: column; align-items: center; text-align: center; gap: var(--e-3);
+  padding: var(--e-8) 0 var(--e-6);
+}
+.privacidad-cabecera .texto-2 { font-size: 16px; max-width: 56ch; }
+.privacidad-fecha { font-size: 13px; color: var(--texto-2); }
+.privacidad-seccion { display: flex; flex-direction: column; gap: var(--e-3); line-height: 1.55; }
+.privacidad-lista { margin: 0; padding-left: var(--e-6); display: flex; flex-direction: column; gap: var(--e-2); }
+.privacidad-lista li::marker { color: var(--acento); }
+.privacidad-seccion .boton { align-self: flex-start; }
+@media (max-width: 767px) {
+  .privacidad-seccion .boton { align-self: stretch; }
+}
