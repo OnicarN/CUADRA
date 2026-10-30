@@ -1,1 +1,56 @@
-/* Google Calendar (RF-54 a RF-56). Responsable: Dani (#16) */
+/* Google Calendar (RF-54 a RF-56). Responsable: Dani (#16)
+   También lo carga js/componentes/sugerencia-evento.js en la pantalla de revisión. */
+
+.calendario-icono {
+  width: 56px; height: 56px; border-radius: var(--pildora); flex: none;
+  background: var(--naranja-suave); color: var(--acento);
+  display: flex; align-items: center; justify-content: center;
+}
+.calendario-icono svg { width: 28px; height: 28px; }
+
+/* Sin conectar / sin plan */
+.calendario-centro { display: flex; flex-direction: column; align-items: center; text-align: center; gap: var(--e-4); }
+.calendario-ventajas { max-width: 52ch; text-align: left; }
+.calendario-ventajas ul { margin: var(--e-2) 0 0; padding-left: var(--e-6); display: flex; flex-direction: column; gap: var(--e-1); }
+.calendario-centro .boton svg { width: 20px; height: 20px; }
+.calendario-nota { font-size: 14px; max-width: 46ch; }
+
+/* Conectado */
+.calendario-conexion { display: flex; flex-wrap: wrap; align-items: center; gap: var(--e-4); }
+.calendario-conexion .fila-centro { flex: 1; min-width: 180px; }
+.calendario-texto { margin: var(--e-1) 0 var(--e-4); }
+
+.calendario-dias { display: flex; align-items: center; gap: var(--e-3); }
+.campo .calendario-dias input { width: 96px; font-variant-numeric: tabular-nums; }
+
+/* Interruptores de las fechas de Hacienda */
+.calendario-interruptor { display: flex; align-items: center; gap: var(--e-3); width: 100%; min-height: 44px; cursor: pointer; }
+.calendario-interruptor input {
+  appearance: none; flex: none; position: relative; margin: 0; cursor: pointer;
+  width: 48px; height: 28px; border-radius: var(--pildora);
+  background: var(--borde); transition: background-color .15s;
+}
+.calendario-interruptor input::after {
+  content: ''; position: absolute; top: 3px; left: 3px; width: 22px; height: 22px;
+  border-radius: 50%; background: var(--tarjeta); box-shadow: 0 1px 2px rgba(0, 0, 0, .2); transition: transform .15s;
+}
+.calendario-interruptor input:checked { background: var(--acento); }
+.calendario-interruptor input:checked::after { transform: translateX(20px); }
+.calendario-interruptor input:focus-visible { outline: 2px solid var(--acento); outline-offset: 2px; }
+
+@media (min-width: 768px) {
+  #form-fechas { max-width: 560px; }
+  #form-fechas > .boton { align-self: flex-start; }
+}
+
+/* Sugerencia de evento en la pantalla de revisión (RF-55) */
+.sugerencia-evento { flex-wrap: wrap; margin-bottom: var(--hueco); }
+.sugerencia-evento .banner-texto { display: flex; flex-direction: column; gap: var(--e-1); min-width: 200px; }
+.sugerencia-evento-detalle { display: inline-flex; align-items: center; gap: var(--e-1); color: var(--texto-2); }
+.sugerencia-evento-detalle svg { width: 16px; height: 16px; flex: none; }
+.sugerencia-evento-botones { display: flex; gap: var(--e-2); margin-left: auto; }
+.sugerencia-evento-botones .boton { min-height: 44px; min-width: 64px; }
+@media (max-width: 480px) {
+  .sugerencia-evento-botones { width: 100%; }
+  .sugerencia-evento-botones .boton { flex: 1; }
+}
