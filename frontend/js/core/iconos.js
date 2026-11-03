@@ -19,6 +19,7 @@ const trazos = {
   papelera: '<path d="M4 7h16M9 7V4h6v3M6 7l1 13h10l1-13"/>',
   editar: '<path d="M4 20h4L19 9l-4-4L4 16z"/><path d="m13 7 4 4"/>',
   salir: '<path d="M9 4H5v16h4"/><path d="m14 8 4 4-4 4M18 12H9"/>',
+  panel: '<rect x="3" y="3" width="7.5" height="9" rx="1.5"/><rect x="13.5" y="3" width="7.5" height="5" rx="1.5"/><rect x="13.5" y="11" width="7.5" height="10" rx="1.5"/><rect x="3" y="15" width="7.5" height="6" rx="1.5"/>',
   informes: '<path d="M3 21h18M6 17v-5M11 17V7M16 17v-8"/>',
   ajustes: '<path d="M4 6h9M19 6h1M4 12h3M13 12h7M4 18h11M21 18h-1"/><circle cx="16" cy="6" r="2.5"/><circle cx="10" cy="12" r="2.5"/><circle cx="17.5" cy="18" r="2.5"/>',
   archivo: '<path d="M6 3h8l4 4v14H6z"/><path d="M14 3v4h4"/>',

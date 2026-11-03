@@ -14,7 +14,7 @@ import { t, agregarTextos, aplicarTextos, idioma, cambiarIdioma } from './i18n.j
 import { aplicarTema, temaGuardado } from './tema.js';
 
 const SECCIONES_APP = [
-  { id: 'panel', href: '/app/panel', icono: 'inicio', texto: 'nav.panel', movil: 'nav.inicio' },
+  { id: 'panel', href: '/app/panel', icono: 'panel', texto: 'nav.panel' },
   { id: 'facturas', href: '/app/facturas', icono: 'facturas', texto: 'nav.facturas' },
   { id: 'informes', href: '/app/informes', icono: 'informes', texto: 'nav.informes', soloOrdenador: true },
 ];
@@ -137,7 +137,7 @@ function pintarApp(usuario, seccion, version = 'empresa') {
   barra.className = 'barra-movil';
   barra.setAttribute('aria-label', 'Menú');
   barra.innerHTML = `
-    <a href="/app/panel" ${actual('panel')}>${icono('inicio')}<span data-t="nav.inicio"></span></a>
+    <a href="/app/panel" ${actual('panel')}>${icono('panel')}<span data-t="nav.panel"></span></a>
     <a href="/app/facturas" ${actual('facturas')}>${icono('facturas')}<span data-t="nav.facturas"></span></a>
     <a href="/app/subir" class="barra-subir" ${actual('subir')}><span class="barra-subir-circulo">${icono('subir')}</span><span data-t="nav.subir"></span></a>
     <a href="/app/avisos" ${actual('avisos')}>${icono('avisos')}<span data-t="nav.avisos"></span><span class="contador" data-contador-avisos hidden></span></a>

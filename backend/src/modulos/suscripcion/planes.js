@@ -1,5 +1,5 @@
 // Planes, extras y prueba gratuita (RF-60).
-// Responsable: Ana (#26).
+// Responsable: Dani (#26, antes Ana).
 // PROVISIONAL: los precios y límites están pendientes del documento de precios.
 // Cambiarlos aquí los cambia en toda la web (la página de precios los lee de /api/suscripcion/planes).
 
