@@ -19,6 +19,7 @@ export const RUTA_VUELTA = '/api/correo/gmail/callback';
 const API = 'https://gmail.googleapis.com/gmail/v1/users/me';
 const TOKEN = 'https://oauth2.googleapis.com/token';
 const MAXIMO_POR_VUELTA = 100;
+const TAMANO_MINIMO_PEGADA = 40 * 1024;
 
 export const gmailConfigurado = () => Boolean(config.google.clientId && config.google.clientSecret);
 
@@ -144,7 +145,8 @@ export async function convertirMensaje(token, mensaje) {
   for (const p of todas) {
     if (!p.filename || !p.body?.attachmentId) continue;
     const disposicion = (p.headers || []).find((h) => h.name.toLowerCase() === 'content-disposition')?.value || '';
-    if (/^\s*inline/i.test(disposicion) && /^image\//.test(p.mimeType)) continue; // logos y firmas
+    // Las imágenes dentro del texto pequeñas son logos y firmas; las grandes, fotos o facturas pegadas.
+    if (/^\s*inline/i.test(disposicion) && /^image\//.test(p.mimeType) && (p.body.size ?? 0) < TAMANO_MINIMO_PEGADA) continue;
     adjuntos.push({ nombre: p.filename, buffer: await gmail.leerAdjunto(token, mensaje.id, p.body.attachmentId) });
   }
   const textoPlano = todas.find((p) => p.mimeType === 'text/plain' && p.body?.data && !p.filename);

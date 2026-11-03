@@ -54,7 +54,9 @@ function pdfDelTexto({ de, asunto, texto }) {
     doc.fillColor('#141414').fontSize(11).text(`De: ${de || '—'}`).text(`Asunto: ${asunto || '—'}`)
       .text(`Recibido: ${new Date().toLocaleString('es-ES', { timeZone: 'Europe/Madrid' })}`)
       .moveDown();
-    doc.fontSize(11).text(String(texto || '(correo sin texto)').slice(0, TEXTO_MAXIMO));
+    // La letra del PDF solo tiene los caracteres europeos: fuera emojis, espacios invisibles, etc.
+    const limpio = String(texto || '').replace(/[^\t\n\r\x20-\x7E\xA0-\xFF€]/g, '').trim();
+    doc.fontSize(11).text((limpio || '(correo sin texto)').slice(0, TEXTO_MAXIMO));
     doc.end();
   });
 }
