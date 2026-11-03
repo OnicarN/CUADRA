@@ -1,1 +1,36 @@
-/* Tu plan (RF-57 a RF-61). Responsable: Ana (#26) */
+/* Tu plan (RF-57 a RF-61). Responsable: Dani (#26, antes Ana) */
+
+.suscripcion-actual { display: flex; flex-direction: column; gap: var(--e-4); }
+.suscripcion-cabecera { display: flex; flex-wrap: wrap; align-items: flex-start; justify-content: space-between; gap: var(--e-3); }
+.suscripcion-precio { margin-top: var(--e-1); }
+.cifra .texto-2 { font-size: 14px; font-weight: 400; }
+.suscripcion-uso { display: flex; flex-direction: column; gap: var(--e-2); }
+.suscripcion-uso .texto-2 { font-size: 14px; }
+.suscripcion-acciones { display: flex; flex-wrap: wrap; gap: var(--e-3); }
+.suscripcion-cancelar { color: var(--rojo); }
+.etiqueta svg { width: 14px; height: 14px; }
+
+.suscripcion-titulo { margin-bottom: var(--e-3); }
+.suscripcion-texto { margin: var(--e-1) 0 var(--e-2); }
+
+/* Planes */
+.suscripcion-opcion { display: flex; flex-direction: column; gap: var(--e-3); }
+.suscripcion-opcion-actual { outline: 2px solid var(--acento); outline-offset: -2px; }
+.suscripcion-opcion .boton, .suscripcion-opcion > .etiqueta { margin-top: auto; align-self: stretch; justify-content: center; }
+.suscripcion-opcion > .etiqueta { min-height: 44px; }
+.suscripcion-funciones { list-style: none; margin: 0; padding: 0; display: flex; flex-direction: column; gap: var(--e-2); font-size: 14px; }
+.suscripcion-funciones li { display: flex; align-items: center; gap: var(--e-2); }
+.suscripcion-funciones svg { width: 18px; height: 18px; color: var(--acento); flex: none; }
+
+/* Extras y pagos */
+.suscripcion-extra-accion { display: flex; align-items: center; gap: var(--e-3); flex: none; }
+.suscripcion-extra-accion .boton-texto svg { width: 18px; height: 18px; }
+@media (max-width: 480px) {
+  .suscripcion-extra-accion { flex-direction: column; align-items: flex-end; gap: var(--e-1); }
+}
+
+/* Barra mientras se confirma el pago */
+.progreso-cargando { margin-top: var(--e-3); }
+.progreso-cargando > span { width: 35%; animation: suscripcion-cargando 1.2s ease-in-out infinite; }
+@keyframes suscripcion-cargando { from { transform: translateX(-100%); } to { transform: translateX(290%); } }
+@media (prefers-reduced-motion: reduce) { .progreso-cargando > span { animation: none; width: 100%; opacity: .4; } }

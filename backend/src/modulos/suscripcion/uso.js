@@ -2,7 +2,7 @@
 // Lo usan otros módulos:
 //   const { restantes } = await obtenerUso(usuarioId);     // subida (RF-23)
 //   if (!(await tieneFuncion(usuarioId, 'informes'))) ...   // exportación, calendario
-// Responsable: Ana (#26). Si cambias lo que devuelve, avisa a Dani y Rodrigo.
+// Responsable: Dani (#26, antes Ana). Si cambias lo que devuelve, avisa a Ana y Rodrigo.
 import { db } from '../../core/db.js';
 import { planPorId, PLAN_PRUEBA } from './planes.js';
 
