@@ -212,6 +212,10 @@ h1, h2, h3, h4, p { margin: 0; }
 .banner-aviso { background: var(--rojo-suave); }
 .banner-aviso > svg:first-child { color: var(--rojo); }
 .banner-texto { flex: 1; font-size: 14px; }
+.aviso-prueba-caja { padding-top: var(--e-4); }
+.aviso-prueba-caja + .app-main { padding-top: var(--e-4); }
+.aviso-prueba a { color: inherit; }
+.aviso-prueba .boton-icono { flex: none; }
 .banner-flecha { width: 20px; height: 20px; color: var(--texto-2); flex: none; }
 
 /* ---------- Formularios ---------- */

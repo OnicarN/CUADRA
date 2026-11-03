@@ -12,6 +12,7 @@ import { api } from './api.js';
 import { icono, logo, pintarIconos } from './iconos.js';
 import { t, agregarTextos, aplicarTextos, idioma, cambiarIdioma } from './i18n.js';
 import { aplicarTema, temaGuardado } from './tema.js';
+import { escapar } from './ui.js';
 
 const SECCIONES_APP = [
   { id: 'panel', href: '/app/panel', icono: 'panel', texto: 'nav.panel' },
@@ -53,6 +54,7 @@ export async function iniciarPagina({ pagina, privada = false, textos } = {}) {
     pintarApp(usuario, SECCION_DE[pagina] || pagina, version);
     actualizarContadorAvisos();
     api('/foto/estado').then((f) => ponerFotoPerfil(f.version)).catch(() => {});
+    if (pagina !== 'suscripcion') avisarFinDePrueba();
   } else {
     usuario = await api('/auth/sesion').catch(() => null);
     pintarWeb(usuario, pagina);
@@ -61,6 +63,53 @@ export async function iniciarPagina({ pagina, privada = false, textos } = {}) {
   aplicarTextos();
   pintarIconos();
   return { usuario, version };
+}
+
+// Los últimos días de la prueba gratuita (RF-60), un aviso arriba en la app con un enlace a
+// elegir plan. Al acabar pasa sola al plan gratis: no se cobra nada sin que el usuario lo elija.
+// Se puede cerrar y no vuelve a salir ese día.
+const DIAS_AVISO_PRUEBA = 3;
+const TEXTOS_PRUEBA = {
+  es: {
+    'prueba.quedan': 'Te quedan {n} días de prueba con todo incluido. Después pasarás al plan gratis.',
+    'prueba.ultimo': 'Hoy es el último día de tu prueba con todo incluido. Mañana pasarás al plan gratis.',
+    'prueba.elegir': 'Elegir plan',
+    'prueba.cerrar': 'Cerrar aviso',
+  },
+  en: {
+    'prueba.quedan': "You have {n} days left of your trial with everything included. Then you'll move to the free plan.",
+    'prueba.ultimo': "Today is the last day of your trial with everything included. Tomorrow you'll move to the free plan.",
+    'prueba.elegir': 'Choose a plan',
+    'prueba.cerrar': 'Close notice',
+  },
+};
+
+async function avisarFinDePrueba() {
+  const hoy = new Date().toISOString().slice(0, 10);
+  try { if (localStorage.getItem('cuadra-aviso-prueba') === hoy) return; } catch { /* sin almacenamiento */ }
+  let uso;
+  try { uso = await api('/suscripcion'); } catch { return; }
+  if (!uso.enPrueba || !uso.pruebaHasta) return;
+  const dias = Math.ceil((new Date(uso.pruebaHasta) - Date.now()) / 86400000);
+  if (dias > DIAS_AVISO_PRUEBA) return;
+
+  agregarTextos(TEXTOS_PRUEBA);
+  const aviso = document.createElement('div');
+  aviso.className = 'banner aviso-prueba';
+  aviso.setAttribute('role', 'status');
+  aviso.innerHTML = `${icono('reloj')}
+    <span class="banner-texto">${escapar(dias > 1 ? t('prueba.quedan', { n: dias }) : t('prueba.ultimo'))}
+      <a href="/app/suscripcion"><strong>${escapar(t('prueba.elegir'))}</strong></a></span>
+    <button type="button" class="boton-icono" aria-label="${escapar(t('prueba.cerrar'))}">${icono('cerrar')}</button>`;
+  // Fuera de #contenido: cada pantalla repinta su contenido y lo borraría.
+  const caja = document.createElement('div');
+  caja.className = 'contenedor aviso-prueba-caja';
+  caja.append(aviso);
+  aviso.querySelector('button').addEventListener('click', () => {
+    try { localStorage.setItem('cuadra-aviso-prueba', hoy); } catch { /* sin almacenamiento */ }
+    caja.remove();
+  });
+  document.querySelector('main')?.before(caja);
 }
 
 // Foto de perfil: cambia la inicial de la cabecera (y el icono de Perfil del móvil) por la foto.
