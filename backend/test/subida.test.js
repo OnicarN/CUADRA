@@ -140,3 +140,53 @@ test('estado de la lectura de una factura subida', async () => {
   assert.equal((await pedir(otro.cookie)).estado, 404);
   assert.ok(id);
 });
+
+// ---- Gastos a mano en la versión personal (#54) ----
+
+async function apuntar(cookie, cuerpo) {
+  const respuesta = await fetch(`${servidor.url}/api/subida/manual`, {
+    method: 'POST', headers: { cookie, 'Content-Type': 'application/json' }, body: JSON.stringify(cuerpo),
+  });
+  return { estado: respuesta.status, datos: await respuesta.json() };
+}
+
+test('gasto a mano: solo en la versión personal, sin archivo y sin gastar lecturas', async () => {
+  const { id, cookie } = await crearUsuario('manual1@prueba.es', { conPerfil: false });
+  const gasto = { fecha: '2026-11-02', concepto: 'Parking Plaza Mayor', total: '4.50' };
+
+  const enEmpresa = await apuntar(cookie, gasto);
+  assert.equal(enEmpresa.estado, 400);
+  assert.equal(enEmpresa.datos.detalles.codigo, 'solo_personal');
+
+  await db.query("INSERT INTO versiones_usuario (usuario_id, version_actual) VALUES ($1, 'personal')", [id]);
+  const { rows: [categoria] } = await db.query("SELECT id FROM categorias WHERE clave = 'combustible'");
+  const { estado, datos } = await apuntar(cookie, { ...gasto, categoria_id: categoria.id });
+  assert.equal(estado, 201);
+
+  const { rows: [f] } = await db.query('SELECT * FROM facturas WHERE id = $1', [datos.id]);
+  assert.equal(f.usuario_id, id);
+  assert.equal(f.origen, 'manual');
+  assert.equal(f.version, 'personal');
+  assert.equal(f.estado, 'pendiente');
+  assert.equal(f.original_id, null);
+  assert.equal(f.leida_en, null); // no cuenta para el límite del plan
+  assert.equal(f.fecha, '2026-11-02');
+  assert.equal(f.emisor, 'Parking Plaza Mayor');
+  assert.equal(f.total, 4.5);
+  assert.equal(f.total_eur, 4.5);
+  assert.equal(f.categoria_id, categoria.id);
+});
+
+test('gasto a mano: valida los datos y la categoría', async () => {
+  const { id, cookie } = await crearUsuario('manual2@prueba.es', { conPerfil: false });
+  const otro = await crearUsuario('manual3@prueba.es', { conPerfil: false });
+  await db.query("INSERT INTO versiones_usuario (usuario_id, version_actual) VALUES ($1, 'personal')", [id]);
+  const bien = { fecha: '2026-11-02', concepto: 'Café', total: 1.8 };
+  assert.equal((await apuntar(cookie, { ...bien, total: 0 })).estado, 400);
+  assert.equal((await apuntar(cookie, { ...bien, concepto: '  ' })).estado, 400);
+  assert.equal((await apuntar(cookie, { ...bien, fecha: 'ayer' })).estado, 400);
+  // Una categoría propia de otro usuario no vale.
+  const { rows: [ajena] } = await db.query("INSERT INTO categorias (usuario_id, nombre) VALUES ($1, 'Mía') RETURNING id", [otro.id]);
+  assert.equal((await apuntar(cookie, { ...bien, categoria_id: ajena.id })).estado, 400);
+  assert.equal((await apuntar(cookie, bien)).estado, 201);
+});

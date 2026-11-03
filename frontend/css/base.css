@@ -315,6 +315,37 @@ h1, h2, h3, h4, p { margin: 0; }
   background: var(--texto); color: var(--fondo); font-weight: 700; text-decoration: none;
   display: inline-flex; align-items: center; justify-content: center;
 }
+/* Elegir la foto de perfil (js/componentes/foto-perfil.js, en la pantalla de Perfil) */
+.foto-perfil { position: relative; flex: none; }
+.foto-perfil-boton { position: relative; padding: 0; border: 0; background: none; border-radius: var(--pildora); cursor: pointer; display: block; }
+.foto-perfil-boton:focus-visible { outline: 2px solid var(--acento); outline-offset: 2px; }
+.foto-perfil-boton .avatar { cursor: pointer; }
+.foto-perfil-lapiz {
+  position: absolute; right: -4px; bottom: -4px; width: 26px; height: 26px; border-radius: var(--pildora);
+  background: var(--tarjeta); color: var(--texto); border: 1px solid var(--borde); box-shadow: var(--sombra);
+  display: flex; align-items: center; justify-content: center;
+}
+.foto-perfil-lapiz svg { width: 14px; height: 14px; }
+.foto-perfil-menu {
+  position: absolute; top: calc(100% + var(--e-2)); left: 0; z-index: 20; min-width: 200px;
+  padding: var(--e-1); border-radius: var(--radio-campo); background: var(--tarjeta); box-shadow: var(--sombra);
+  border: 1px solid var(--borde); display: flex; flex-direction: column;
+}
+.foto-perfil-menu[hidden] { display: none; }
+.foto-perfil-opcion {
+  display: flex; align-items: center; gap: var(--e-2); min-height: 44px; padding: 0 var(--e-3);
+  border: 0; border-radius: var(--radio-campo); background: none; color: var(--texto); font: inherit; text-align: left; cursor: pointer;
+}
+.foto-perfil-opcion:hover, .foto-perfil-opcion:focus-visible { background: var(--gris-suave); }
+.foto-perfil-opcion svg { width: 18px; height: 18px; }
+.foto-perfil-opcion[hidden] { display: none; }
+
+/* Foto de perfil en el círculo (cabecera, Perfil) y en el botón Perfil de la barra del móvil */
+.avatar.con-foto, .barra-foto.con-foto { background: var(--gris-suave); overflow: hidden; }
+.avatar img, .barra-foto img { width: 100%; height: 100%; object-fit: cover; display: block; border-radius: inherit; }
+.barra-foto { display: inline-flex; align-items: center; justify-content: center; }
+.barra-foto.con-foto { width: 26px; height: 26px; border-radius: var(--pildora); }
+[aria-current="page"] .barra-foto.con-foto { box-shadow: 0 0 0 2px var(--acento); }
 .solo-ordenador { display: none !important; }
 @media (min-width: 1024px) {
   .solo-ordenador { display: flex !important; }

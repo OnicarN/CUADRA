@@ -6,6 +6,8 @@
 //                    estado: 'pendiente' (se está leyendo), 'sin_leer' (límite del plan) o
 //                    'rechazado' (con su motivo en `error`; el resto de archivos sí se sube)
 //                 409 { error, codigo: 'perfil_incompleto' } si no hay perfil fiscal (RF-10)
+// POST /manual   { fecha, concepto, total, categoria_id? } gasto a mano en la versión personal (#54)
+//                 -> 201 { id }   (400 con codigo 'solo_personal' si está en la versión de empresa)
 // GET  /:id/estado  cómo va la lectura de una factura recién subida
 //                 -> { estado: 'leyendo' | 'leida' | 'sin_datos' | 'sin_leer' | 'confirmada', emisor, total, moneda, motivo }
 import { Router } from 'express';
@@ -15,6 +17,7 @@ import { peticionIncorrecta, noEncontrado, ErrorHttp } from '../../core/errores.
 import { db } from '../../core/db.js';
 import { obtenerPerfil } from '../perfil/servicio.js';
 import { crearFacturaDesdeArchivo, TAMANO_MAXIMO } from './servicio.js';
+import { crearGastoManual } from './manual.js';
 
 const MAXIMO_ARCHIVOS = 20;
 const subida = multer({ storage: multer.memoryStorage(), limits: { fileSize: TAMANO_MAXIMO, files: MAXIMO_ARCHIVOS } });
@@ -47,6 +50,10 @@ rutas.post('/', subida.array('archivos', MAXIMO_ARCHIVOS), async (req, res) => {
     }
   }
   res.status(201).json(resultado);
+});
+
+rutas.post('/manual', async (req, res) => {
+  res.status(201).json(await crearGastoManual(req.usuario.id, req.body));
 });
 
 rutas.get('/:id/estado', async (req, res) => {

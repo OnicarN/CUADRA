@@ -6,6 +6,7 @@ import { api } from '../core/api.js';
 import { t } from '../core/i18n.js';
 import { icono } from '../core/iconos.js';
 import { html, seguro, mostrarToast } from '../core/ui.js';
+import { pintarFotoPerfil } from '../componentes/foto-perfil.js';
 
 const textos = {
   es: {
@@ -221,7 +222,7 @@ document.getElementById('contenido').innerHTML = html`
   <div class="pila">
     ${seguro(bannerInicial())}
     <section class="tarjeta perfil-usuario">
-      <span class="avatar">${(usuario.nombre || '?')[0].toUpperCase()}</span>
+      <span class="avatar" id="perfil-avatar">${(usuario.nombre || '?')[0].toUpperCase()}</span>
       <div><p class="titulo-seccion">${usuario.nombre}</p><p class="texto-2">${usuario.email}</p></div>
     </section>
     <section class="tarjeta" aria-labelledby="titulo-fiscal">
@@ -257,6 +258,9 @@ document.getElementById('contenido').innerHTML = html`
     </nav>
     <button type="button" class="boton boton-secundario" id="salir">${seguro(icono('salir'))}${t('perfil.salir')}</button>
   </div>`;
+
+// Foto de perfil: el componente es de Dani (js/componentes/foto-perfil.js).
+pintarFotoPerfil(document.getElementById('perfil-avatar'));
 
 // ---------- Perfil fiscal ----------
 const formFiscal = document.getElementById('form-fiscal');

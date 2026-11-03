@@ -70,3 +70,10 @@
 .instalar-texto { flex: 1; min-width: 200px; }
 .instalar-texto .texto-2 { margin-top: var(--e-1); }
 @media (max-width: 480px) { .instalar .boton { width: 100%; } }
+
+/* Gasto a mano, versión personal (#54) */
+.manual-texto { margin: var(--e-1) 0 var(--e-4); }
+.manual-fila { display: grid; grid-template-columns: 1fr 1fr; gap: var(--e-3); }
+#form-manual { max-width: 560px; }
+.manual-acciones { display: flex; flex-wrap: wrap; justify-content: flex-end; gap: var(--e-3); }
+@media (max-width: 480px) { .manual-acciones .boton { flex: 1; } }

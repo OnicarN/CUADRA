@@ -52,6 +52,7 @@ export async function iniciarPagina({ pagina, privada = false, textos } = {}) {
     aplicarTema(temaLocal !== 'sistema' ? temaLocal : usuario.tema);
     pintarApp(usuario, SECCION_DE[pagina] || pagina, version);
     actualizarContadorAvisos();
+    api('/foto/estado').then((f) => ponerFotoPerfil(f.version)).catch(() => {});
   } else {
     usuario = await api('/auth/sesion').catch(() => null);
     pintarWeb(usuario, pagina);
@@ -60,6 +61,19 @@ export async function iniciarPagina({ pagina, privada = false, textos } = {}) {
   aplicarTextos();
   pintarIconos();
   return { usuario, version };
+}
+
+// Foto de perfil: cambia la inicial de la cabecera (y el icono de Perfil del móvil) por la foto.
+// Con version = null vuelve a lo de antes. La usa también js/componentes/foto-perfil.js.
+const contenidoSinFoto = new WeakMap();
+export function ponerFotoPerfil(version) {
+  document.querySelectorAll('[data-foto-perfil]').forEach((elemento) => {
+    if (!contenidoSinFoto.has(elemento)) contenidoSinFoto.set(elemento, elemento.innerHTML);
+    elemento.classList.toggle('con-foto', Boolean(version));
+    elemento.innerHTML = version
+      ? `<img src="/api/foto?v=${encodeURIComponent(version)}" alt="" decoding="async">`
+      : contenidoSinFoto.get(elemento);
+  });
 }
 
 export async function actualizarContadorAvisos() {
@@ -122,7 +136,7 @@ function pintarApp(usuario, seccion, version = 'empresa') {
         <a class="boton-icono solo-ordenador" href="/app/avisos" data-t-aria="nav.avisos" ${actual('avisos')}>
           ${icono('avisos')}<span class="contador" data-contador-avisos hidden></span>
         </a>
-        <a class="avatar solo-ordenador" href="/app/perfil" data-t-aria="nav.perfil">${inicial}</a>
+        <a class="avatar solo-ordenador" href="/app/perfil" data-t-aria="nav.perfil" data-foto-perfil>${inicial}</a>
       </div>
     </div>`;
   document.body.prepend(cabecera);
@@ -141,7 +155,7 @@ function pintarApp(usuario, seccion, version = 'empresa') {
     <a href="/app/facturas" ${actual('facturas')}>${icono('facturas')}<span data-t="nav.facturas"></span></a>
     <a href="/app/subir" class="barra-subir" ${actual('subir')}><span class="barra-subir-circulo">${icono('subir')}</span><span data-t="nav.subir"></span></a>
     <a href="/app/avisos" ${actual('avisos')}>${icono('avisos')}<span data-t="nav.avisos"></span><span class="contador" data-contador-avisos hidden></span></a>
-    <a href="/app/perfil" ${actual('perfil')}>${icono('perfil')}<span data-t="nav.perfil"></span></a>`;
+    <a href="/app/perfil" ${actual('perfil')}><span class="barra-foto" data-foto-perfil>${icono('perfil')}</span><span data-t="nav.perfil"></span></a>`;
   document.body.append(barra);
 }
 
