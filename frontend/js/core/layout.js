@@ -117,7 +117,7 @@ function pintarApp(usuario, seccion, version = 'empresa') {
   cabecera.className = 'app-cabecera';
   cabecera.innerHTML = `
     <div class="contenedor app-cabecera-fila">
-      <a class="logo" href="/app/panel">${logo()}<span class="logo-nombre">Cuadra</span></a>
+      <a class="logo" href="/">${logo()}<span class="logo-nombre">Cuadra</span></a>
       <div class="pestanas selector-version" role="group" data-t-aria="version.titulo">
         ${['empresa', 'personal'].map((v) => `<button type="button" class="pestana" data-version="${v}" aria-pressed="${v === version}" data-t="version.${v}"></button>`).join('')}
       </div>
