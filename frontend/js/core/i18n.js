@@ -12,7 +12,6 @@ const CLAVE = 'cuadra-idioma';
 const diccionario = {
   es: {
     'nav.panel': 'Panel',
-    'nav.inicio': 'Inicio',
     'nav.facturas': 'Facturas',
     'nav.subir': 'Subir',
     'nav.subirFactura': 'Subir factura',
@@ -40,7 +39,6 @@ const diccionario = {
   },
   en: {
     'nav.panel': 'Dashboard',
-    'nav.inicio': 'Home',
     'nav.facturas': 'Invoices',
     'nav.subir': 'Upload',
     'nav.subirFactura': 'Upload invoice',
