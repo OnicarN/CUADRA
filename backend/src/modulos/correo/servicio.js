@@ -13,6 +13,7 @@ import { db } from '../../core/db.js';
 import { config } from '../../config.js';
 import { crearAviso, TIPOS_AVISO } from '../../core/avisos.js';
 import { crearFacturaDesdeArchivo, detectarTipo, TAMANO_MAXIMO } from '../subida/servicio.js';
+import { gmail, obtenerBuzon, convertirMensaje } from './gmail.js';
 
 const TEXTO_MAXIMO = 20000;
 
@@ -24,12 +25,18 @@ export function extraerEmail(valor) {
   return email ? email.toLowerCase() : null;
 }
 
-// De todos los destinatarios, el alias del que sea de nuestro dominio.
-export function extraerAlias(para) {
+// De todos los destinatarios, el alias del que sea nuestro: alias@CORREO_DOMINIO o,
+// con el buzón de Gmail (gmail.js), buzon+alias@gmail.com.
+export function extraerAlias(para, buzon = null) {
   const dominio = `@${config.correoDominio.toLowerCase()}`;
+  const [local, dominioBuzon] = String(buzon || '').toLowerCase().split('@');
   for (const parte of String(para || '').split(/[,;]/)) {
     const email = extraerEmail(parte);
-    if (email?.endsWith(dominio)) return email.slice(0, -dominio.length);
+    if (!email) continue;
+    if (email.endsWith(dominio)) return email.slice(0, -dominio.length);
+    if (buzon && email.startsWith(`${local}+`) && email.endsWith(`@${dominioBuzon}`)) {
+      return email.slice(local.length + 1, -(dominioBuzon.length + 1)) || null;
+    }
   }
   return null;
 }
@@ -60,8 +67,11 @@ async function registrar({ usuarioId, remitente, asunto, aceptado, numFacturas =
   );
 }
 
-export async function procesarCorreo({ para, de, asunto = '', texto = '', adjuntos = [] }) {
-  const alias = extraerAlias(para);
+// verificado = false cuando el proveedor no ha podido comprobar al remitente (sin SPF ni DKIM):
+// entonces no nos fiamos del "De" y se trata como remitente no autorizado.
+export async function procesarCorreo({ para, de, asunto = '', texto = '', adjuntos = [], verificado = true }) {
+  const buzon = await obtenerBuzon().catch(() => null);
+  const alias = extraerAlias(para, buzon?.email);
   const { rows: [usuario] } = alias
     ? await db.query('SELECT id, email FROM usuarios WHERE alias_correo = $1', [alias])
     : { rows: [] };
@@ -72,7 +82,7 @@ export async function procesarCorreo({ para, de, asunto = '', texto = '', adjunt
     'SELECT 1 FROM emails_confianza WHERE usuario_id = $1 AND lower(email) = $2',
     [usuario.id, remitente],
   );
-  const autorizado = remitente && (remitente === usuario.email.toLowerCase() || confianza.length > 0);
+  const autorizado = verificado && remitente && (remitente === usuario.email.toLowerCase() || confianza.length > 0);
   if (!autorizado) {
     await registrar({ usuarioId: usuario.id, remitente: remitente || de, asunto, aceptado: false });
     await crearAviso({
@@ -107,4 +117,25 @@ export async function procesarCorreo({ para, de, asunto = '', texto = '', adjunt
 
   await registrar({ usuarioId: usuario.id, remitente, asunto, aceptado: true, numFacturas: facturas.length });
   return { aceptado: true, facturas };
+}
+
+// Revisa el buzón de Gmail: cada correo nuevo se procesa y se archiva (tareas.js, cada minuto).
+// Si uno falla, se deja sin leer para el siguiente intento y se sigue con los demás.
+export async function revisarBuzon() {
+  const buzon = await obtenerBuzon();
+  if (!buzon) return 0;
+  const token = await gmail.tokenDeAcceso(buzon.refresh_token);
+  let procesados = 0;
+  for (const id of await gmail.listarNuevos(token)) {
+    try {
+      const mensaje = await gmail.leerMensaje(token, id);
+      await procesarCorreo(await convertirMensaje(token, mensaje));
+      await gmail.archivar(token, id);
+      procesados += 1;
+    } catch (error) {
+      console.error(`[correo] No se pudo procesar el correo ${id}:`, error.message);
+    }
+  }
+  await db.query('UPDATE buzon_correo SET revisado_en = now() WHERE id = 1');
+  return procesados;
 }

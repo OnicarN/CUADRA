@@ -6,7 +6,14 @@
 //                  -> 200 { aceptado, motivo?, facturas: [ids] }
 // POST /simular    igual, sin secreto, solo fuera de producción: para probar en local sin proveedor.
 //
-// Cómo se conecta el correo de verdad (Cloudflare Email Routing, gratis):
+// GET  /gmail/conectar?secreto=CORREO_WEBHOOK_SECRETO   conecta el buzón de Gmail de Cuadra (una vez)
+// GET  /gmail/callback                                  vuelta de Google: guarda el permiso
+// GET  /gmail/estado?secreto=...                        { conectado, email, revisado_en }
+//
+// Opción sin dominio (la que usamos): un Gmail de Cuadra y direcciones buzon+alias@gmail.com.
+// Cuadra lo revisa cada minuto. Cómo ponerlo en marcha: ver gmail.js.
+//
+// Opción con dominio propio (Cloudflare Email Routing, gratis):
 //   1. El dominio de CORREO_DOMINIO en Cloudflare, con Email Routing activado.
 //   2. Un Email Worker con el código de cloudflare-worker.js (en esta carpeta), con las variables
 //      CUADRA_URL (la URL de Render) y CUADRA_SECRETO (el mismo valor que CORREO_WEBHOOK_SECRETO).
@@ -19,6 +26,9 @@ import { config } from '../../config.js';
 import { ErrorHttp, noEncontrado } from '../../core/errores.js';
 import { TAMANO_MAXIMO } from '../subida/servicio.js';
 import { procesarCorreo } from './servicio.js';
+import { gmail, gmailConfigurado, urlConsentimiento, guardarBuzon, obtenerBuzon } from './gmail.js';
+
+const COOKIE_GMAIL = 'cuadra_buzon';
 
 const recibir = multer({ storage: multer.memoryStorage(), limits: { fileSize: TAMANO_MAXIMO, files: 20 } });
 const rutas = Router();
@@ -49,5 +59,35 @@ rutas.post('/simular', (_req, _res, next) => {
   if (config.produccion) throw noEncontrado('Ruta no encontrada');
   next();
 }, recibir.array('adjuntos', 20), atender);
+
+// ---- Buzón de Gmail (lo conecta una vez quien administra Cuadra) ----
+
+rutas.get('/gmail/conectar', (req, res) => {
+  if (!gmailConfigurado()) throw new ErrorHttp(503, 'Faltan GOOGLE_CLIENT_ID y GOOGLE_CLIENT_SECRET');
+  if (!secretoCorrecto(req.query.secreto)) throw new ErrorHttp(401, 'Secreto no válido');
+  const estado = crypto.randomBytes(16).toString('hex');
+  res.cookie(COOKIE_GMAIL, estado, { httpOnly: true, sameSite: 'lax', secure: config.produccion, maxAge: 10 * 60 * 1000 });
+  res.redirect(urlConsentimiento(estado));
+});
+
+rutas.get('/gmail/callback', async (req, res) => {
+  const guardado = req.cookies?.[COOKIE_GMAIL];
+  res.clearCookie(COOKIE_GMAIL);
+  const { code, state } = req.query;
+  if (!code || !guardado || state !== guardado) throw new ErrorHttp(400, 'No se ha podido conectar el buzón. Vuelve a empezar.');
+  const datos = await gmail.canjearCodigo(String(code));
+  if (!datos.refreshToken || !datos.email) throw new ErrorHttp(502, 'Google no ha devuelto el permiso. Vuelve a empezar.');
+  await guardarBuzon(datos);
+  const [local, dominio] = datos.email.split('@');
+  res.type('text/plain; charset=utf-8').send(
+    `Buzón conectado: ${datos.email}\n\nCada usuario recibe ahora sus facturas en ${local}+<su alias>@${dominio}.\nYa puedes cerrar esta pestaña.`,
+  );
+});
+
+rutas.get('/gmail/estado', async (req, res) => {
+  if (!secretoCorrecto(req.query.secreto)) throw new ErrorHttp(401, 'Secreto no válido');
+  const buzon = await obtenerBuzon();
+  res.json({ conectado: Boolean(buzon), email: buzon?.email ?? null, revisado_en: buzon?.revisado_en ?? null });
+});
 
 export default rutas;
