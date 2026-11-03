@@ -13,7 +13,7 @@ import { db } from '../../core/db.js';
 import { config } from '../../config.js';
 import { crearAviso, TIPOS_AVISO } from '../../core/avisos.js';
 import { crearFacturaDesdeArchivo, detectarTipo, TAMANO_MAXIMO } from '../subida/servicio.js';
-import { gmail, obtenerBuzon, convertirMensaje } from './gmail.js';
+import { gmail, obtenerBuzon, convertirMensaje, destinatarios } from './gmail.js';
 
 const TEXTO_MAXIMO = 20000;
 
@@ -54,7 +54,9 @@ function pdfDelTexto({ de, asunto, texto }) {
     doc.fillColor('#141414').fontSize(11).text(`De: ${de || '—'}`).text(`Asunto: ${asunto || '—'}`)
       .text(`Recibido: ${new Date().toLocaleString('es-ES', { timeZone: 'Europe/Madrid' })}`)
       .moveDown();
-    doc.fontSize(11).text(String(texto || '(correo sin texto)').slice(0, TEXTO_MAXIMO));
+    // La letra del PDF solo tiene los caracteres europeos: fuera emojis, espacios invisibles, etc.
+    const limpio = String(texto || '').replace(/[^\t\n\r\x20-\x7E\xA0-\xFF€]/g, '').trim();
+    doc.fontSize(11).text((limpio || '(correo sin texto)').slice(0, TEXTO_MAXIMO));
     doc.end();
   });
 }
@@ -119,7 +121,9 @@ export async function procesarCorreo({ para, de, asunto = '', texto = '', adjunt
   return { aceptado: true, facturas };
 }
 
-// Revisa el buzón de Gmail: cada correo nuevo se procesa y se archiva (tareas.js, cada minuto).
+// Revisa el buzón de Gmail: cada correo nuevo para buzon+alias se procesa y se archiva (tareas.js,
+// cada minuto). Los que no van a una dirección +alias NO se tocan: así, aunque se conectara por
+// error un Gmail personal, Cuadra no leería ni archivaría nada que no sea suyo.
 // Si uno falla, se deja sin leer para el siguiente intento y se sigue con los demás.
 export async function revisarBuzon() {
   const buzon = await obtenerBuzon();
@@ -129,6 +133,7 @@ export async function revisarBuzon() {
   for (const id of await gmail.listarNuevos(token)) {
     try {
       const mensaje = await gmail.leerMensaje(token, id);
+      if (!extraerAlias(destinatarios(mensaje), buzon.email)) continue;
       await procesarCorreo(await convertirMensaje(token, mensaje));
       await gmail.archivar(token, id);
       procesados += 1;

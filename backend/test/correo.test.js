@@ -124,7 +124,7 @@ function mensajeGmail({ id, para, de, asunto = 'Factura', adjunto = null, autent
   const parts = [{ mimeType: 'text/plain', filename: '', body: { data: b64('Te reenvío la factura') } }];
   if (adjunto) {
     parts.push({ mimeType: 'application/pdf', filename: adjunto, body: { attachmentId: `adj-${id}` }, headers: [{ name: 'Content-Disposition', value: 'attachment' }] });
-    parts.push({ mimeType: 'image/png', filename: 'logo.png', body: { attachmentId: 'logo' }, headers: [{ name: 'Content-Disposition', value: 'inline' }] });
+    parts.push({ mimeType: 'image/png', filename: 'logo.png', body: { attachmentId: 'logo', size: 3000 }, headers: [{ name: 'Content-Disposition', value: 'inline' }] });
   }
   return {
     id,
@@ -148,7 +148,7 @@ test('buzón de Gmail: cada usuario tiene buzon+alias@gmail.com y sus correos se
     tokenDeAcceso: async () => 'token',
     listarNuevos: async () => Object.keys(mensajes).filter((id) => !archivados.includes(id)),
     leerMensaje: async (_t, id) => mensajes[id],
-    leerAdjunto: async (_t, _m, adjunto) => (adjunto === 'logo' ? JPG : PDF),
+    leerAdjunto: async (_t, _m, adjunto) => (adjunto === 'logo' || adjunto === 'pegada' ? JPG : PDF),
     archivar: async (_t, id) => { archivados.push(id); },
   });
   try {
@@ -166,6 +166,8 @@ test('buzón de Gmail: cada usuario tiene buzon+alias@gmail.com y sus correos se
     const direccion = `cuadra.facturas+${alias}@gmail.com`;
     mensajes.m1 = mensajeGmail({ id: 'm1', para: direccion, de: `Yo <${u.email}>`, adjunto: 'luz.pdf' });
     mensajes.m2 = mensajeGmail({ id: 'm2', para: direccion, de: u.email, adjunto: 'falsa.pdf', autenticacion: 'spf=fail dkim=none' });
+    // Un correo normal del buzón, sin +alias: no se toca (ni se procesa ni se archiva).
+    mensajes.m3 = mensajeGmail({ id: 'm3', para: 'cuadra.facturas@gmail.com', de: 'amigo@gmail.com', asunto: 'Hola' });
     assert.equal(await revisarBuzon(), 2);
     assert.deepEqual(archivados, ['m1', 'm2']);
 
@@ -173,7 +175,14 @@ test('buzón de Gmail: cada usuario tiene buzon+alias@gmail.com y sus correos se
     assert.deepEqual(await facturasDe(u.id), ['correo']);
     const { rows } = await db.query('SELECT aceptado FROM correos_entrantes WHERE usuario_id = $1 ORDER BY id', [u.id]);
     assert.deepEqual(rows.map((r) => r.aceptado), [true, false]);
-    assert.equal(await revisarBuzon(), 0); // ya no quedan nuevos
+    // Una factura pegada dentro del texto (imagen grande, no adjunta) también cuenta.
+    const pegada = mensajeGmail({ id: 'm4', para: direccion, de: u.email });
+    pegada.payload.parts.push({ mimeType: 'image/jpeg', filename: 'image.jpg', body: { attachmentId: 'pegada', size: 250000 }, headers: [{ name: 'Content-Disposition', value: 'inline' }] });
+    mensajes.m4 = pegada;
+    assert.equal(await revisarBuzon(), 1);
+    assert.deepEqual(await facturasDe(u.id), ['correo', 'correo']);
+    assert.equal(await revisarBuzon(), 0); // ya no quedan nuevos para Cuadra
+    assert.ok(!archivados.includes('m3'));
   } finally {
     usarGmail(null);
     await desconectarBuzon();
