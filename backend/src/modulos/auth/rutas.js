@@ -30,6 +30,7 @@ import { enviarEmailVerificacion, enviarEmailRecuperacion } from './correos.js';
 import { crearLimite } from './limite.js';
 import { googleConfigurado, urlConsentimiento, datosDeGoogle } from './google.js';
 import { rutaInterna } from './utilidades.js';
+import { direccionCorreo } from '../correo/gmail.js';
 
 const rutas = Router();
 
@@ -48,7 +49,8 @@ export async function obtenerUsuario(id) {
   );
   const usuario = rows[0];
   if (!usuario) return null;
-  return { ...usuario, correo_cuadra: `${usuario.alias_correo}@${config.correoDominio}` };
+  // La dirección depende de cómo reciba Cuadra el correo (buzón de Gmail o dominio propio, #14).
+  return { ...usuario, correo_cuadra: await direccionCorreo(usuario.alias_correo) };
 }
 
 // Crea el usuario con su suscripción de prueba y sus ajustes. La usa también el login con Google.

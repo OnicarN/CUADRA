@@ -116,3 +116,83 @@ test('el webhook de verdad exige el secreto', async () => {
     config.correoWebhookSecreto = anterior;
   }
 });
+
+// ---- Buzón de Gmail: buzon+alias@gmail.com, sin dominio propio ----
+
+const b64 = (texto) => Buffer.from(texto).toString('base64url');
+function mensajeGmail({ id, para, de, asunto = 'Factura', adjunto = null, autenticacion = 'spf=pass dkim=pass' }) {
+  const parts = [{ mimeType: 'text/plain', filename: '', body: { data: b64('Te reenvío la factura') } }];
+  if (adjunto) {
+    parts.push({ mimeType: 'application/pdf', filename: adjunto, body: { attachmentId: `adj-${id}` }, headers: [{ name: 'Content-Disposition', value: 'attachment' }] });
+    parts.push({ mimeType: 'image/png', filename: 'logo.png', body: { attachmentId: 'logo' }, headers: [{ name: 'Content-Disposition', value: 'inline' }] });
+  }
+  return {
+    id,
+    payload: {
+      mimeType: 'multipart/mixed',
+      headers: [
+        { name: 'Delivered-To', value: para }, { name: 'To', value: para }, { name: 'From', value: de },
+        { name: 'Subject', value: asunto }, { name: 'Authentication-Results', value: `mx.google.com; ${autenticacion}` },
+      ],
+      parts,
+    },
+  };
+}
+
+test('buzón de Gmail: cada usuario tiene buzon+alias@gmail.com y sus correos se convierten en facturas', async () => {
+  const { usarGmail, guardarBuzon, desconectarBuzon } = await import('../src/modulos/correo/gmail.js');
+  const { revisarBuzon } = await import('../src/modulos/correo/servicio.js');
+  const mensajes = {};
+  const archivados = [];
+  usarGmail({
+    tokenDeAcceso: async () => 'token',
+    listarNuevos: async () => Object.keys(mensajes).filter((id) => !archivados.includes(id)),
+    leerMensaje: async (_t, id) => mensajes[id],
+    leerAdjunto: async (_t, _m, adjunto) => (adjunto === 'logo' ? JPG : PDF),
+    archivar: async (_t, id) => { archivados.push(id); },
+  });
+  try {
+    await guardarBuzon({ email: 'cuadra.facturas@gmail.com', refreshToken: 'r' });
+    const u = await crearUsuario();
+    // La dirección que ve el usuario ya es la del buzón.
+    const { rows: [{ alias_correo: alias }] } = await db.query('SELECT alias_correo FROM usuarios WHERE id = $1', [u.id]);
+    const yo = await (await fetch(`${servidor.url}/api/auth/registro`, {
+      method: 'POST', headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ nombre: 'Otra', email: 'buzon-otra@prueba.es', password: '12345678' }),
+    })).json();
+    assert.match(yo.correo_cuadra, /^cuadra\.facturas\+[0-9a-f]+@gmail\.com$/);
+    assert.equal(extraerAlias(`Cuadra <cuadra.facturas+${alias}@gmail.com>`, 'cuadra.facturas@gmail.com'), alias);
+
+    const direccion = `cuadra.facturas+${alias}@gmail.com`;
+    mensajes.m1 = mensajeGmail({ id: 'm1', para: direccion, de: `Yo <${u.email}>`, adjunto: 'luz.pdf' });
+    mensajes.m2 = mensajeGmail({ id: 'm2', para: direccion, de: u.email, adjunto: 'falsa.pdf', autenticacion: 'spf=fail dkim=none' });
+    assert.equal(await revisarBuzon(), 2);
+    assert.deepEqual(archivados, ['m1', 'm2']);
+
+    // El de m1 crea una factura (el logo incrustado se ignora); el de m2 no pasa la verificación.
+    assert.deepEqual(await facturasDe(u.id), ['correo']);
+    const { rows } = await db.query('SELECT aceptado FROM correos_entrantes WHERE usuario_id = $1 ORDER BY id', [u.id]);
+    assert.deepEqual(rows.map((r) => r.aceptado), [true, false]);
+    assert.equal(await revisarBuzon(), 0); // ya no quedan nuevos
+  } finally {
+    usarGmail(null);
+    await desconectarBuzon();
+  }
+});
+
+test('buzón de Gmail: conectar exige el secreto', async () => {
+  const anterior = { ...config.google };
+  const secreto = config.correoWebhookSecreto;
+  try {
+    config.google.clientId = 'cliente'; config.google.clientSecret = 'secreto';
+    config.correoWebhookSecreto = 'secreto-buzon-123';
+    const sin = await fetch(`${servidor.url}/api/correo/gmail/conectar?secreto=otro`, { redirect: 'manual' });
+    assert.equal(sin.status, 401);
+    const con = await fetch(`${servidor.url}/api/correo/gmail/conectar?secreto=secreto-buzon-123`, { redirect: 'manual' });
+    assert.equal(con.status, 302);
+    assert.match(con.headers.get('location'), /gmail\.modify/);
+  } finally {
+    Object.assign(config.google, anterior);
+    config.correoWebhookSecreto = secreto;
+  }
+});
