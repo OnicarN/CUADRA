@@ -384,9 +384,31 @@ h1, h2, h3, h4, p { margin: 0; }
 .web-nav { display: flex; align-items: center; gap: var(--e-2); margin-left: auto; }
 .web-nav-enlace { font-size: 15px; font-weight: 500; text-decoration: none; padding: 0 var(--e-2); color: var(--texto-2); }
 .web-nav-enlace:hover, .web-nav-enlace[aria-current="page"] { color: var(--texto); }
-.web-pie { border-top: 1px solid var(--borde); padding: var(--e-8) 0; margin-top: var(--e-12); }
-.web-pie-fila { display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: var(--e-4); }
-@media (max-width: 599px) { .web-cabecera .ocultar-movil { display: none; } }
+.web-pie { border-top: 1px solid var(--borde); padding: var(--e-8) 0 var(--e-6); margin-top: var(--e-12); }
+.web-pie-columnas { display: grid; gap: var(--e-6); grid-template-columns: 1fr; }
+.web-pie-marca { display: flex; flex-direction: column; align-items: flex-start; gap: var(--e-2); }
+.web-pie-marca .texto-2 { font-size: 14px; }
+.web-pie-titulo { font-size: 14px; font-weight: 600; color: var(--texto-2); margin: 0 0 var(--e-1); }
+.web-pie-columna ul { list-style: none; margin: 0; padding: 0; }
+.web-pie-enlace {
+  display: inline-flex; align-items: center; min-height: 44px;
+  color: var(--texto); text-decoration: none; font-size: 15px;
+}
+.web-pie-enlace:hover { color: var(--acento); }
+.web-pie-enlace:focus-visible { outline: 2px solid var(--acento); outline-offset: 2px; border-radius: 4px; }
+.web-pie-inferior {
+  display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: var(--e-3);
+  margin-top: var(--e-6); padding-top: var(--e-4); border-top: 1px solid var(--borde);
+}
+.web-pie-inferior .texto-2 { font-size: 14px; }
+@media (min-width: 600px) { .web-pie-columnas { grid-template-columns: 1fr 1fr; } .web-pie-marca { grid-column: 1 / -1; } }
+@media (min-width: 1024px) {
+  .web-pie-columnas { grid-template-columns: 2fr 1fr 1fr; }
+  .web-pie-marca { grid-column: auto; }
+  .web-pie-enlace { min-height: 36px; }
+}
+/* En el móvil el idioma se cambia desde el pie: así la cabecera cabe entera. */
+@media (max-width: 599px) { .web-cabecera .ocultar-movil, .web-cabecera .selector-idioma { display: none; } }
 
 .selector-idioma {
   min-height: 36px; padding: 0 var(--e-3); border: 1px solid var(--borde); border-radius: var(--pildora);
