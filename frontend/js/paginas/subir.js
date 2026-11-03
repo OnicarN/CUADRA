@@ -18,6 +18,19 @@ const textos = {
     'subir.zona.suelta': 'Suelta los archivos para subirlos',
     'subir.boton': 'Subir factura',
     'subir.foto': 'Hacer foto',
+    'subir.manual': 'Añadir a mano',
+    'subir.manual.titulo': 'Añadir un gasto a mano',
+    'subir.manual.texto': 'Para gastos sin ticket: apunta la fecha, en qué y cuánto. No gasta lecturas de tu plan.',
+    'subir.manual.fecha': 'Fecha',
+    'subir.manual.concepto': 'Concepto',
+    'subir.manual.conceptoEjemplo': 'Por ejemplo: Parking, Café con Marta…',
+    'subir.manual.total': 'Importe (€)',
+    'subir.manual.categoria': 'Categoría',
+    'subir.manual.sinCategoria': 'Sin categoría',
+    'subir.manual.guardar': 'Guardar gasto',
+    'subir.manual.cancelar': 'Cancelar',
+    'subir.manual.errorConcepto': 'Escribe en qué te lo has gastado.',
+    'subir.manual.errorTotal': 'Escribe un importe mayor que cero.',
     'subir.perfil': 'Antes de subir tu primera factura completa tu perfil fiscal (NIF, dirección y actividad).',
     'subir.perfil.enlace': 'Completar perfil',
     'subir.camara.una': 'Una foto',
@@ -59,6 +72,19 @@ const textos = {
     'subir.zona.suelta': 'Drop the files to upload them',
     'subir.boton': 'Upload invoice',
     'subir.foto': 'Take photo',
+    'subir.manual': 'Add manually',
+    'subir.manual.titulo': 'Add an expense manually',
+    'subir.manual.texto': "For expenses without a receipt: enter the date, what and how much. It doesn't use your plan's reads.",
+    'subir.manual.fecha': 'Date',
+    'subir.manual.concepto': 'Description',
+    'subir.manual.conceptoEjemplo': 'For example: Parking, Coffee with Marta…',
+    'subir.manual.total': 'Amount (€)',
+    'subir.manual.categoria': 'Category',
+    'subir.manual.sinCategoria': 'No category',
+    'subir.manual.guardar': 'Save expense',
+    'subir.manual.cancelar': 'Cancel',
+    'subir.manual.errorConcepto': 'Enter what you spent it on.',
+    'subir.manual.errorTotal': 'Enter an amount greater than zero.',
     'subir.perfil': 'Before uploading your first invoice, complete your tax profile (tax ID, address and activity).',
     'subir.perfil.enlace': 'Complete profile',
     'subir.camara.una': 'One photo',
@@ -98,7 +124,7 @@ const ACEPTADOS = 'application/pdf,image/jpeg,image/png,image/heic,image/heif,.p
 const EXTENSIONES = /\.(pdf|jpe?g|png|heic|heif)$/i;
 const TAMANO_MAXIMO = 15 * 1024 * 1024;
 
-const { usuario } = await iniciarPagina({ pagina: 'subir', privada: true, textos });
+const { usuario, version } = await iniciarPagina({ pagina: 'subir', privada: true, textos });
 
 const contenido = document.getElementById('contenido');
 contenido.innerHTML = html`
@@ -119,11 +145,43 @@ contenido.innerHTML = html`
       <div class="zona-acciones">
         <button type="button" class="boton boton-principal" id="elegir">${seguro(icono('subir'))}${t('subir.boton')}</button>
         <button type="button" class="boton boton-secundario" id="abrir-camara">${seguro(icono('camara'))}${t('subir.foto')}</button>
+        ${version === 'personal' ? seguro(html`<button type="button" class="boton boton-secundario" id="abrir-manual">${seguro(icono('editar'))}${t('subir.manual')}</button>`) : ''}
       </div>
       <p class="texto-2 solo-ordenador">${t('subir.zona.arrastra')}</p>
       <p class="zona-suelta" aria-hidden="true">${t('subir.zona.suelta')}</p>
       <input type="file" id="archivos" accept="${ACEPTADOS}" multiple hidden>
       <input type="file" id="foto-sistema" accept="image/*" capture="environment" hidden>
+    </section>
+
+    <section class="tarjeta manual" id="manual" aria-labelledby="titulo-manual" hidden>
+      <h2 class="titulo-seccion" id="titulo-manual">${t('subir.manual.titulo')}</h2>
+      <p class="texto-2 manual-texto">${t('subir.manual.texto')}</p>
+      <form class="formulario" id="form-manual" novalidate>
+        <div class="manual-fila">
+          <div class="campo">
+            <label for="manual-fecha">${t('subir.manual.fecha')}</label>
+            <input id="manual-fecha" name="fecha" type="date" required>
+          </div>
+          <div class="campo">
+            <label for="manual-total">${t('subir.manual.total')}</label>
+            <input id="manual-total" name="total" type="text" inputmode="decimal" autocomplete="off" required aria-describedby="manual-total-error">
+            <p class="campo-error" id="manual-total-error" hidden>${t('subir.manual.errorTotal')}</p>
+          </div>
+        </div>
+        <div class="campo">
+          <label for="manual-concepto">${t('subir.manual.concepto')}</label>
+          <input id="manual-concepto" name="concepto" type="text" maxlength="200" required placeholder="${t('subir.manual.conceptoEjemplo')}" aria-describedby="manual-concepto-error">
+          <p class="campo-error" id="manual-concepto-error" hidden>${t('subir.manual.errorConcepto')}</p>
+        </div>
+        <div class="campo">
+          <label for="manual-categoria">${t('subir.manual.categoria')}</label>
+          <select id="manual-categoria" name="categoria_id"><option value="">${t('subir.manual.sinCategoria')}</option></select>
+        </div>
+        <div class="manual-acciones">
+          <button type="button" class="boton boton-secundario" id="cancelar-manual">${t('subir.manual.cancelar')}</button>
+          <button type="submit" class="boton boton-principal">${t('subir.manual.guardar')}</button>
+        </div>
+      </form>
     </section>
 
     <section class="tarjeta camara" id="camara" hidden>
@@ -421,3 +479,56 @@ if (new URLSearchParams(location.search).has('compartido')) {
     mostrarToast(t('subir.compartidoVacio'));
   }
 }
+
+// ---- Gasto a mano, solo en la versión personal (#54) ----
+const seccionManual = document.getElementById('manual');
+const formManual = document.getElementById('form-manual');
+let categoriasCargadas = false;
+
+async function abrirManual() {
+  seccionManual.hidden = false;
+  formManual.elements.fecha.value = new Date().toLocaleDateString('sv-SE'); // AAAA-MM-DD en la hora local
+  if (!categoriasCargadas) {
+    categoriasCargadas = true;
+    const categorias = await api('/categorias').catch(() => []);
+    formManual.elements.categoria_id.insertAdjacentHTML('beforeend',
+      categorias.map((c) => html`<option value="${c.id}">${c.nombre}</option>`).join(''));
+  }
+  seccionManual.scrollIntoView({ behavior: 'smooth', block: 'start' });
+  formManual.elements.total.focus({ preventScroll: true });
+}
+
+document.getElementById('abrir-manual')?.addEventListener('click', abrirManual);
+document.getElementById('cancelar-manual').addEventListener('click', () => {
+  formManual.reset();
+  seccionManual.hidden = true;
+});
+
+formManual.addEventListener('submit', async (evento) => {
+  evento.preventDefault();
+  const { fecha, total, concepto, categoria_id: categoria } = formManual.elements;
+  const importe = Number(total.value.replace(/\s/g, '').replace(',', '.'));
+  const errores = {
+    total: !(importe > 0),
+    concepto: !concepto.value.trim(),
+  };
+  for (const [campo, mal] of Object.entries(errores)) {
+    document.getElementById(`manual-${campo}-error`).hidden = !mal;
+    formManual.elements[campo].setAttribute('aria-invalid', String(mal));
+  }
+  if (errores.total) return total.focus();
+  if (errores.concepto) return concepto.focus();
+
+  const boton = formManual.querySelector('[type=submit]');
+  boton.disabled = true;
+  try {
+    const { id } = await api('/subida/manual', {
+      metodo: 'POST',
+      cuerpo: { fecha: fecha.value, concepto: concepto.value.trim(), total: importe, categoria_id: categoria.value || null },
+    });
+    location.href = `/app/factura?id=${id}`; // a la revisión, para confirmarlo
+  } catch (e) {
+    mostrarToast(e.message || t('comun.error'));
+    boton.disabled = false;
+  }
+});
