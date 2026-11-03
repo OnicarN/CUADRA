@@ -18,7 +18,7 @@ import { config } from '../../config.js';
 export const RUTA_VUELTA = '/api/correo/gmail/callback';
 const API = 'https://gmail.googleapis.com/gmail/v1/users/me';
 const TOKEN = 'https://oauth2.googleapis.com/token';
-const MAXIMO_POR_VUELTA = 20;
+const MAXIMO_POR_VUELTA = 100;
 
 export const gmailConfigurado = () => Boolean(config.google.clientId && config.google.clientSecret);
 
@@ -29,7 +29,7 @@ export function urlConsentimiento(estado) {
     response_type: 'code',
     scope: 'https://www.googleapis.com/auth/gmail.modify',
     access_type: 'offline',
-    prompt: 'consent',
+    prompt: 'select_account consent', // que elija la cuenta: tiene que ser el Gmail de Cuadra, no el personal
     state: estado,
   });
   return `https://accounts.google.com/o/oauth2/v2/auth?${parametros}`;
@@ -133,6 +133,10 @@ const decodificar = (datos) => Buffer.from(datos || '', 'base64url').toString('u
 const sinEtiquetas = (htmlTexto) => htmlTexto.replace(/<style[\s\S]*?<\/style>/gi, '').replace(/<[^>]+>/g, ' ')
   .replace(/&nbsp;/g, ' ').replace(/&amp;/g, '&').replace(/\s+\n/g, '\n').replace(/[ \t]{2,}/g, ' ').trim();
 
+// Todos los destinatarios. Delivered-To lleva la dirección exacta con el +alias; To y Cc, por si acaso.
+export const destinatarios = (mensaje) =>
+  [...cabecera(mensaje, 'Delivered-To'), ...cabecera(mensaje, 'To'), ...cabecera(mensaje, 'Cc')].join(', ');
+
 // Devuelve lo que necesita procesarCorreo(), más si el remitente está verificado (SPF o DKIM).
 export async function convertirMensaje(token, mensaje) {
   const todas = partes(mensaje.payload || {});
@@ -150,8 +154,7 @@ export async function convertirMensaje(token, mensaje) {
   // Gmail comprueba si el remitente es quien dice ser. Sin SPF ni DKIM válidos no nos fiamos del "De".
   const autenticacion = cabecera(mensaje, 'Authentication-Results').join(' ');
   return {
-    // Delivered-To lleva la dirección exacta con el +alias; To, por si acaso.
-    para: [...cabecera(mensaje, 'Delivered-To'), ...cabecera(mensaje, 'To'), ...cabecera(mensaje, 'Cc')].join(', '),
+    para: destinatarios(mensaje),
     de: cabecera(mensaje, 'From')[0] || '',
     asunto: cabecera(mensaje, 'Subject')[0] || '',
     texto,

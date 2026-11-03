@@ -166,6 +166,8 @@ test('buzón de Gmail: cada usuario tiene buzon+alias@gmail.com y sus correos se
     const direccion = `cuadra.facturas+${alias}@gmail.com`;
     mensajes.m1 = mensajeGmail({ id: 'm1', para: direccion, de: `Yo <${u.email}>`, adjunto: 'luz.pdf' });
     mensajes.m2 = mensajeGmail({ id: 'm2', para: direccion, de: u.email, adjunto: 'falsa.pdf', autenticacion: 'spf=fail dkim=none' });
+    // Un correo normal del buzón, sin +alias: no se toca (ni se procesa ni se archiva).
+    mensajes.m3 = mensajeGmail({ id: 'm3', para: 'cuadra.facturas@gmail.com', de: 'amigo@gmail.com', asunto: 'Hola' });
     assert.equal(await revisarBuzon(), 2);
     assert.deepEqual(archivados, ['m1', 'm2']);
 
@@ -173,7 +175,8 @@ test('buzón de Gmail: cada usuario tiene buzon+alias@gmail.com y sus correos se
     assert.deepEqual(await facturasDe(u.id), ['correo']);
     const { rows } = await db.query('SELECT aceptado FROM correos_entrantes WHERE usuario_id = $1 ORDER BY id', [u.id]);
     assert.deepEqual(rows.map((r) => r.aceptado), [true, false]);
-    assert.equal(await revisarBuzon(), 0); // ya no quedan nuevos
+    assert.equal(await revisarBuzon(), 0); // ya no quedan nuevos para Cuadra
+    assert.ok(!archivados.includes('m3'));
   } finally {
     usarGmail(null);
     await desconectarBuzon();
