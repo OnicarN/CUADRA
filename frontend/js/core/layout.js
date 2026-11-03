@@ -159,6 +159,45 @@ function pintarApp(usuario, seccion, version = 'empresa') {
   document.body.append(barra);
 }
 
+// Pie de la web pública (#51): marca, producto y legal; debajo, derechos e idioma.
+// En la app (/app/...) no hay pie: allí está la barra de abajo del móvil.
+function crearPie() {
+  const enlace = (href, clave) => `<li><a class="web-pie-enlace" href="${href}" data-t="${clave}"></a></li>`;
+  const pie = document.createElement('footer');
+  pie.className = 'web-pie';
+  pie.innerHTML = `
+    <div class="contenedor">
+      <div class="web-pie-columnas">
+        <div class="web-pie-marca">
+          <a class="logo" href="/">${logo()}<span class="logo-nombre">Cuadra</span></a>
+          <p class="texto-2" data-t="pie.frase"></p>
+          <a class="web-pie-enlace" href="mailto:hola@cuadra.app">hola@cuadra.app</a>
+        </div>
+        <nav class="web-pie-columna" aria-labelledby="pie-producto">
+          <h2 class="web-pie-titulo" id="pie-producto" data-t="pie.producto"></h2>
+          <ul>
+            ${enlace('/precios', 'nav.precios')}
+            ${enlace('/entrar', 'nav.entrar')}
+            ${enlace('/registro', 'nav.crearCuenta')}
+          </ul>
+        </nav>
+        <nav class="web-pie-columna" aria-labelledby="pie-legal">
+          <h2 class="web-pie-titulo" id="pie-legal" data-t="pie.legal"></h2>
+          <ul>
+            ${enlace('/privacidad', 'pie.privacidad')}
+            ${enlace('/condiciones', 'pie.condiciones')}
+            ${enlace('mailto:hola@cuadra.app', 'pie.contacto')}
+          </ul>
+        </nav>
+      </div>
+      <div class="web-pie-inferior">
+        <p class="texto-2">${t('pie.derechos', { anio: new Date().getFullYear() })}</p>
+        ${selectorIdioma()}
+      </div>
+    </div>`;
+  return pie;
+}
+
 function pintarWeb(usuario, pagina) {
   const actual = (id) => (id === pagina ? 'aria-current="page"' : '');
   const acciones = usuario
@@ -179,18 +218,6 @@ function pintarWeb(usuario, pagina) {
     </div>`;
   document.body.prepend(cabecera);
 
-  const pie = document.createElement('footer');
-  pie.className = 'web-pie';
-  pie.innerHTML = `
-    <div class="contenedor web-pie-fila">
-      <a class="logo" href="/">${logo()}<span class="logo-nombre">Cuadra</span></a>
-      <nav class="web-nav" style="margin-left:0">
-        <a class="web-nav-enlace" href="/precios" data-t="nav.precios"></a>
-        <a class="web-nav-enlace" href="mailto:hola@cuadra.app" data-t="pie.contacto"></a>
-      </nav>
-      <p class="texto-2" data-t="pie.derechos"></p>
-    </div>`;
-  document.body.append(pie);
-
+  document.body.append(crearPie());
   activarSelectorIdioma(document);
 }

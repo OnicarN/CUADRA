@@ -1,0 +1,12 @@
+/* Páginas legales: /privacidad y /condiciones (#51). Responsable: Dani */
+.legal { max-width: 70ch; margin: var(--e-8) auto 0; }
+.legal-cabecera { display: flex; flex-direction: column; gap: var(--e-2); margin-bottom: var(--e-6); }
+.legal-cabecera .texto-2 { font-size: 14px; }
+.legal-intro { font-size: 17px; line-height: 1.6; }
+.legal-indice { margin-bottom: var(--e-8); }
+.legal-indice ol { margin: var(--e-3) 0 0; padding-left: var(--e-6); display: flex; flex-direction: column; gap: var(--e-1); }
+.legal-indice a { display: inline-flex; align-items: center; min-height: 36px; color: var(--texto); }
+.legal-indice a:hover { color: var(--acento); }
+.legal-seccion { margin-bottom: var(--e-8); scroll-margin-top: var(--e-8); }
+.legal-seccion .titulo-seccion { margin-bottom: var(--e-3); }
+.legal-seccion p { line-height: 1.65; margin: 0 0 var(--e-3); color: var(--texto); }
