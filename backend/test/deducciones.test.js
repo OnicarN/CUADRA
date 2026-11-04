@@ -78,6 +78,8 @@ test('proveedor de la UE sin IVA: inversión del sujeto pasivo al 21 %', () => {
   assert.equal(r.tipo, 'intracomunitaria');
   assert.deepEqual(r.iva.casillas, { devengado: ['10', '11'], deducible: ['36', '37'] });
   assert.deepEqual([r.iva.devengadoBase, r.iva.devengadoCuota, r.iva.cuota, r.irpf], [100, 21, 21, 100]);
+  // Con una línea de IVA al 0 % (como la pinta Google) también.
+  assert.equal(clasificarFactura({ ...google, base_imponible: 100, cuota_iva: 0, lineas: 1 }, general).tipo, 'intracomunitaria');
   // Sin tu NIF en la factura no vale.
   assert.equal(clasificarFactura({ ...google, nif_receptor: null }, general).tipo, 'incompleta');
 });
