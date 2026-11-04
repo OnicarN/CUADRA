@@ -59,7 +59,11 @@ export function reglaCategoria(clave, { actividad, viviendaPct } = {}) {
 function tipoDe(f) {
   const tieneIva = f.lineas > 0 && f.cuota_iva !== null;
   if (f.moneda !== 'EUR') return 'fuera_ue';
-  if (esNifUe(f.nif_emisor)) return f.nif_receptor && !tieneIva ? 'intracomunitaria' : (tieneIva ? 'fuera_ue' : 'incompleta');
+  // De la UE: si no le han cobrado IVA (ni líneas, o una línea al 0 %), es intracomunitaria.
+  if (esNifUe(f.nif_emisor)) {
+    if (Number(f.cuota_iva ?? 0) > 0) return 'fuera_ue';
+    return f.nif_receptor ? 'intracomunitaria' : 'incompleta';
+  }
   if (!f.nif_emisor || !f.nif_receptor || !tieneIva) return 'incompleta';
   return 'interior';
 }
