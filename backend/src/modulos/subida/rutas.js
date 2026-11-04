@@ -6,8 +6,8 @@
 //                    estado: 'pendiente' (se está leyendo), 'sin_leer' (límite del plan) o
 //                    'rechazado' (con su motivo en `error`; el resto de archivos sí se sube)
 //                 409 { error, codigo: 'perfil_incompleto' } si no hay perfil fiscal (RF-10)
-// POST /manual   { fecha, concepto, total, categoria_id? } gasto a mano en la versión personal (#54)
-//                 -> 201 { id }   (400 con codigo 'solo_personal' si está en la versión de empresa)
+// POST /manual   { fecha, concepto, total, categoria_id? } gasto a mano, sin archivo (#54)
+//                 -> 201 { id }   se guarda en la versión (empresa o personal) en la que esté
 // GET  /:id/estado  cómo va la lectura de una factura recién subida
 //                 -> { estado: 'leyendo' | 'leida' | 'sin_datos' | 'sin_leer' | 'confirmada', emisor, total, moneda, motivo }
 import { Router } from 'express';
