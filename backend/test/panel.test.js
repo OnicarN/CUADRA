@@ -83,12 +83,25 @@ test('mes: número, gasto, comparación y categorías de las confirmadas', async
   ]);
 });
 
-test('IVA soportado del trimestre, en euros (RF-45)', async () => {
-  const datos = await panel(lucia.cliente, '?periodo=mes&fecha=2026-10-30');
-  assert.deepEqual([datos.trimestre.anio, datos.trimestre.trimestre, datos.trimestre.plazo], [2026, 4, '2027-01-30']);
-  assert.equal(datos.ivaSoportadoTrimestre, 41.32); // 21 + 8,68 + 2,64 + 10 × 0,9
-  const t3 = await panel(lucia.cliente, '?periodo=trimestre&fecha=2026-08-01');
-  assert.equal(t3.ivaSoportadoTrimestre, 34.71);
+test('IVA que podrá deducir: el mismo cálculo que la casilla 29 (RF-45)', async () => {
+  // Sin perfil fiscal no se sabe el régimen: 0.
+  assert.equal((await panel(lucia.cliente, '?periodo=mes&fecha=2026-10-30')).ivaSoportadoTrimestre, 0);
+
+  await db.query(
+    `INSERT INTO perfiles_fiscales (usuario_id, nif, direccion, actividad, regimen_iva) VALUES ($1, '12345678Z', 'Calle 1', 'diseno', 'general')`,
+    [lucia.id],
+  );
+  const completa = async (fecha, base, cuota, categoria) => {
+    const id = await crearFactura(lucia.id, { fecha, total: base + cuota, cuota, categoria });
+    await db.query("UPDATE facturas SET nif_emisor = 'B12345674', nif_receptor = '12345678Z', base_imponible = $2 WHERE id = $1", [id, base]);
+    await db.query('INSERT INTO factura_iva (factura_id, base, tipo, cuota) VALUES ($1, $2, 21, $3)', [id, base, cuota]);
+  };
+  // T2 2024: dos completas (una de combustible, al 50 %) y los tickets del resto de tests no cuentan.
+  await completa('2024-05-04', 100, 21, 'software');
+  await completa('2024-05-20', 50, 10.5, 'combustible');
+  await crearFactura(lucia.id, { fecha: '2024-05-21', total: 60, cuota: 10.41 }); // ticket sin NIF
+  assert.equal((await panel(lucia.cliente, '?periodo=trimestre&fecha=2024-05-10')).ivaSoportadoTrimestre, 26.25);
+  await db.query('DELETE FROM perfiles_fiscales WHERE usuario_id = $1', [lucia.id]);
 });
 
 test('trimestre y año', async () => {

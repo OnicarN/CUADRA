@@ -73,3 +73,5 @@
 .ajustes-version .boton { margin-top: auto; }
 .campo .ajustes-dias #presupuesto_mensual { width: 140px; }
 .ajustes-ayuda { font-size: 13px; }
+.ajustes-empresa { width: 100%; margin-top: var(--e-2); padding-top: var(--e-4); border-top: 1px solid var(--borde); }
+.campo .ajustes-dias #cuota_autonomos_mensual, .campo .ajustes-dias #vivienda_afecta_pct { width: 140px; }

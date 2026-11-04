@@ -26,6 +26,13 @@ const textos = {
     'ajustes.regimen.recargo_equivalencia': 'recargo de equivalencia',
     'ajustes.regimen.exento': 'exento',
     'ajustes.empresaEditar': 'Editar datos fiscales',
+    'ajustes.cuota': 'Cuota de autónomos al mes',
+    'ajustes.cuotaAyuda': 'Lo que pagas a la Seguridad Social. Es gasto deducible y se suma en el modelo 130.',
+    'ajustes.cuotaError': 'Escribe un importe de 0 o más.',
+    'ajustes.enCasa': 'Trabajo desde casa',
+    'ajustes.vivienda': 'Parte de la casa que usas para trabajar',
+    'ajustes.viviendaAyuda': 'Con esto se calcula cuánto te deduces de la luz, el agua y el gas de casa.',
+    'ajustes.viviendaError': 'Escribe un porcentaje entre 1 y 100.',
     'ajustes.personalTitulo': 'Versión personal',
     'ajustes.personalTexto': 'Tickets para llevar el control de tus gastos, sin NIF ni IVA.',
     'ajustes.presupuesto': 'Presupuesto al mes',
@@ -97,6 +104,13 @@ const textos = {
     'ajustes.regimen.recargo_equivalencia': 'equivalence surcharge',
     'ajustes.regimen.exento': 'exempt',
     'ajustes.empresaEditar': 'Edit tax details',
+    'ajustes.cuota': 'Monthly self-employed contribution',
+    'ajustes.cuotaAyuda': "What you pay to Social Security. It's a deductible expense and is added in form 130.",
+    'ajustes.cuotaError': 'Enter an amount of 0 or more.',
+    'ajustes.enCasa': 'I work from home',
+    'ajustes.vivienda': 'Part of your home you use for work',
+    'ajustes.viviendaAyuda': 'Used to work out how much of your home electricity, water and gas you deduct.',
+    'ajustes.viviendaError': 'Enter a percentage between 1 and 100.',
     'ajustes.personalTitulo': 'Personal version',
     'ajustes.personalTexto': 'Receipts to keep track of your spending, without tax IDs or VAT.',
     'ajustes.presupuesto': 'Monthly budget',
@@ -218,6 +232,33 @@ document.getElementById('contenido').innerHTML = html`
             ? t('ajustes.empresaDatos', { nif: perfil.nif, regimen: t(`ajustes.regimen.${perfil.regimen_iva}`) })
             : t('ajustes.empresaSinPerfil')}</p>
           <a class="boton boton-secundario" href="/app/perfil">${t('ajustes.empresaEditar')}</a>
+          <form class="formulario ajustes-empresa" id="form-empresa" novalidate>
+            <div class="campo">
+              <label for="cuota_autonomos_mensual">${t('ajustes.cuota')}</label>
+              <div class="ajustes-dias">
+                <input id="cuota_autonomos_mensual" name="cuota_autonomos_mensual" type="text" inputmode="decimal" autocomplete="off"
+                  value="${versiones.empresa.cuota_autonomos_mensual ?? ''}" aria-describedby="cuota-ayuda cuota_autonomos_mensual-error">
+                <span>€</span>
+              </div>
+              <p class="texto-2 ajustes-ayuda" id="cuota-ayuda">${t('ajustes.cuotaAyuda')}</p>
+              <p class="campo-error" id="cuota_autonomos_mensual-error" hidden>${t('ajustes.cuotaError')}</p>
+            </div>
+            <label class="ajustes-casilla">
+              <input type="checkbox" id="en-casa" ${seguro(versiones.empresa.vivienda_afecta_pct ? 'checked' : '')}>
+              <span>${t('ajustes.enCasa')}</span>
+            </label>
+            <div class="campo" id="campo-vivienda" ${seguro(versiones.empresa.vivienda_afecta_pct ? '' : 'hidden')}>
+              <label for="vivienda_afecta_pct">${t('ajustes.vivienda')}</label>
+              <div class="ajustes-dias">
+                <input id="vivienda_afecta_pct" name="vivienda_afecta_pct" type="text" inputmode="decimal" autocomplete="off"
+                  value="${versiones.empresa.vivienda_afecta_pct ?? ''}" aria-describedby="vivienda-ayuda vivienda_afecta_pct-error">
+                <span>%</span>
+              </div>
+              <p class="texto-2 ajustes-ayuda" id="vivienda-ayuda">${t('ajustes.viviendaAyuda')}</p>
+              <p class="campo-error" id="vivienda_afecta_pct-error" hidden>${t('ajustes.viviendaError')}</p>
+            </div>
+            <button type="submit" class="boton boton-principal">${t('comun.guardar')}</button>
+          </form>
         </div>
         <form class="ajustes-version formulario" id="personal" novalidate>
           <h3 class="ajustes-version-titulo">${seguro(icono('euro'))} ${t('ajustes.personalTitulo')}</h3>
@@ -333,6 +374,41 @@ document.querySelectorAll('[data-version]').forEach((boton) => {
       mostrarToast(e.message || t('comun.error'));
     }
   });
+});
+
+// Datos de empresa para las deducciones: cuota de autónomos y % de casa (si trabaja en casa).
+const formEmpresa = document.getElementById('form-empresa');
+const enCasa = document.getElementById('en-casa');
+enCasa.addEventListener('change', () => {
+  document.getElementById('campo-vivienda').hidden = !enCasa.checked;
+  if (enCasa.checked) document.getElementById('vivienda_afecta_pct').focus();
+});
+formEmpresa.addEventListener('input', (evento) => {
+  const error = document.getElementById(`${evento.target.id}-error`);
+  if (error) { error.hidden = true; evento.target.removeAttribute('aria-invalid'); }
+});
+formEmpresa.addEventListener('submit', async (evento) => {
+  evento.preventDefault();
+  const leer = (id) => document.getElementById(id).value.trim().replace(/\s|€|%/g, '').replace(',', '.');
+  const marcarError = (id) => {
+    document.getElementById(`${id}-error`).hidden = false;
+    document.getElementById(id).setAttribute('aria-invalid', 'true');
+    document.getElementById(id).focus();
+  };
+  const cuota = leer('cuota_autonomos_mensual');
+  const vivienda = enCasa.checked ? leer('vivienda_afecta_pct') : '';
+  if (cuota && !(Number(cuota) >= 0)) return marcarError('cuota_autonomos_mensual');
+  if (enCasa.checked && !(Number(vivienda) > 0 && Number(vivienda) <= 100)) return marcarError('vivienda_afecta_pct');
+  const boton = formEmpresa.querySelector('button[type="submit"]');
+  boton.disabled = true;
+  try {
+    await api('/versiones/empresa', { metodo: 'PUT', cuerpo: { cuota_autonomos_mensual: cuota, vivienda_afecta_pct: vivienda } });
+    mostrarToast(t('ajustes.guardado'));
+  } catch (e) {
+    mostrarToast(e.message || t('comun.error'));
+  } finally {
+    boton.disabled = false;
+  }
 });
 
 const formPersonal = document.getElementById('personal');

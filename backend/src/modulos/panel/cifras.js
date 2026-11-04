@@ -13,7 +13,7 @@ import { peticionIncorrecta } from '../../core/errores.js';
 import { trimestreDe, rangoTrimestre, plazoPresentacion, diasEntre, hoy } from '../../core/fiscal.js';
 import { obtenerVersiones } from '../versiones/servicio.js';
 import { contarAbiertos } from '../avisos/servicio.js';
-import { calcularImpresos } from './impresos.js';
+import { calcularImpresos, ivaDeducible } from './impresos.js';
 
 export const PERIODOS = ['mes', 'trimestre', 'anio'];
 const MESES = { mes: 1, trimestre: 3, anio: 12 };
@@ -83,12 +83,9 @@ export async function calcularPanel(usuarioId, filtros) {
         ORDER BY total DESC, categoria`,
       [usuarioId, rango.desde, rango.hasta],
     ),
-    // RF-45: el IVA soportado se pasa a euros con el tipo de cambio de cada factura.
-    db.query(
-      `SELECT COALESCE(SUM(CASE WHEN f.moneda = 'EUR' THEN f.cuota_iva ELSE f.cuota_iva * f.tipo_cambio END), 0) AS iva
-         FROM facturas f WHERE ${confirmadasEn('$2', '$3')}`,
-      [usuarioId, trimestreActual.desde, trimestreActual.hasta],
-    ),
+    // RF-45: el IVA que podrá deducir del trimestre, con las mismas reglas que la casilla 29
+    // del 303 (deducibilidad.js): solo facturas completas y según la categoría.
+    version === 'empresa' ? ivaDeducible(usuarioId, trimestreActual.desde, trimestreActual.hasta) : null,
     db.query(`SELECT COUNT(*)::int AS n FROM facturas WHERE usuario_id = $1 AND estado = 'pendiente' AND version = $2`, [usuarioId, version]),
     contarAbiertos(usuarioId, version),
     // RF-47: gasto por cliente o proyecto, de las facturas asociadas a un evento del calendario.
@@ -132,7 +129,7 @@ export async function calcularPanel(usuarioId, filtros) {
   return {
     ...comun,
     trimestre: { anio, trimestre, desde: trimestreActual.desde, hasta: trimestreActual.hasta, plazo },
-    ivaSoportadoTrimestre: redondear(iva.rows[0].iva),
+    ivaSoportadoTrimestre: iva.cuota,
     diasCierreTrimestre: diasEntre(hoy(), plazoCierre),
     cierre: { anio: actual.anio, trimestre: actual.trimestre, plazo: plazoCierre },
     porCliente: clientes.rows.map((c) => ({ cliente: c.cliente, total: redondear(c.total), num: c.num })),

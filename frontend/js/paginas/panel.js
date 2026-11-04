@@ -75,9 +75,27 @@ const textos = {
     'panel.imp.303': 'Modelo 303 · IVA del trimestre',
     'panel.imp.130': 'Modelo 130 · Pago a cuenta del IRPF',
     'panel.imp.casilla': 'Casilla {n}',
-    'panel.imp.base_soportado': 'Base de tus gastos con IVA',
-    'panel.imp.cuota_soportado': 'IVA que te deduces',
-    'panel.imp.gastos_deducibles': 'Gastos deducibles desde el 1 de enero',
+    'panel.imp.c.303-10': 'Compras a proveedores de la UE (base)',
+    'panel.imp.c.303-11': 'IVA que declaras por esas compras (21 %)',
+    'panel.imp.c.303-28': 'Base de tus gastos con IVA',
+    'panel.imp.c.303-29': 'IVA que te deduces',
+    'panel.imp.c.303-30': 'Base de bienes de inversión (equipos caros)',
+    'panel.imp.c.303-31': 'IVA de bienes de inversión que te deduces',
+    'panel.imp.c.303-36': 'Base de las compras a la UE que te deduces',
+    'panel.imp.c.303-37': 'IVA de las compras a la UE que te deduces',
+    'panel.imp.c.130-02': 'Gastos deducibles desde el 1 de enero',
+    'panel.imp.cuota': 'Incluye {total} de cuota de autónomos ({meses} meses de {mensual}).',
+    'panel.imp.sinCuota': 'Añade tu cuota de autónomos en Ajustes: es gasto deducible y ahora no se está sumando.',
+    'panel.imp.comoTitulo': 'Cómo lo hemos calculado',
+    'panel.imp.m.incompleta1': '1 gasto de {total} no cuenta: le falta el NIF o el IVA desglosado. Pide la factura completa al proveedor.',
+    'panel.imp.m.incompleta': '{n} gastos por {total} no cuentan: les falta el NIF o el IVA desglosado. Pide la factura completa al proveedor.',
+    'panel.imp.m.fuera_ue1': '1 factura de fuera de la UE de {total} no está calculada: pásasela a tu gestoría.',
+    'panel.imp.m.fuera_ue': '{n} facturas de fuera de la UE por {total} no están calculadas: pásaselas a tu gestoría.',
+    'panel.imp.m.vehiculo': 'Coche ({n}): te deduces la mitad del IVA y no cuenta como gasto en el IRPF, salvo que lo uses solo para trabajar.',
+    'panel.imp.m.atenciones': 'Comidas con clientes ({n}): su IVA no se puede deducir. En el IRPF sí cuentan, con un límite del 1 % de tus ingresos.',
+    'panel.imp.m.suministros': 'Suministros de casa ({n}): solo la parte de la casa con la que trabajas, y en el IRPF el 30 % de esa parte.',
+    'panel.imp.m.amortizar': 'Equipos de más de 300 € ({n}): no van enteros al IRPF, se amortizan en varios años. Pregunta a tu gestoría cuánto toca este año.',
+    'panel.imp.m.intracomunitaria': 'Proveedores de la UE sin IVA ({n}): el IVA (21 %) lo declaras y te lo deduces a la vez, así que no pagas de más. Tienes que estar dado de alta en el ROI (modelo 036).',
     'panel.imp.facturas1': 'Con 1 factura',
     'panel.imp.facturas': 'Con {n} facturas',
     'panel.imp.copiar': 'Copiar el importe de la casilla {n}',
@@ -86,8 +104,6 @@ const textos = {
     'panel.imp.regimen_simplificado': 'En régimen simplificado se calcula por módulos (303 y 131). Pásale el informe a tu gestoría.',
     'panel.imp.regimen_recargo_equivalencia': 'Con recargo de equivalencia no presentas el 303 por esta actividad.',
     'panel.imp.sin_perfil': 'Completa tu perfil fiscal para calcularlo.',
-    'panel.imp.noDeducibles1': '1 gasto de este trimestre ({total}) no cuenta porque le falta el NIF o el IVA desglosado. Pide la factura completa.',
-    'panel.imp.noDeducibles': '{n} gastos de este trimestre ({total}) no cuentan porque les falta el NIF o el IVA desglosado. Pide la factura completa.',
     'panel.imp.sede': 'Ir a la Sede de Hacienda',
     'panel.imp.informe': 'Informe para la gestoría',
     'panel.imp.aviso': 'Es una ayuda: revisa los datos antes de presentar y, si tienes dudas, pregunta a tu gestoría.',
@@ -156,9 +172,27 @@ const textos = {
     'panel.imp.303': 'Form 303 · Quarterly VAT',
     'panel.imp.130': 'Form 130 · Income tax payment on account',
     'panel.imp.casilla': 'Box {n}',
-    'panel.imp.base_soportado': 'Base of your expenses with VAT',
-    'panel.imp.cuota_soportado': 'VAT you deduct',
-    'panel.imp.gastos_deducibles': 'Deductible expenses since 1 January',
+    'panel.imp.c.303-10': 'Purchases from EU suppliers (base)',
+    'panel.imp.c.303-11': 'VAT you declare on those purchases (21%)',
+    'panel.imp.c.303-28': 'Base of your expenses with VAT',
+    'panel.imp.c.303-29': 'VAT you deduct',
+    'panel.imp.c.303-30': 'Base of capital goods (expensive equipment)',
+    'panel.imp.c.303-31': 'VAT on capital goods you deduct',
+    'panel.imp.c.303-36': 'Base of EU purchases you deduct',
+    'panel.imp.c.303-37': 'VAT on EU purchases you deduct',
+    'panel.imp.c.130-02': 'Deductible expenses since 1 January',
+    'panel.imp.cuota': 'Includes {total} of self-employed contributions ({meses} months of {mensual}).',
+    'panel.imp.sinCuota': "Add your self-employed contribution in Settings: it's a deductible expense and it isn't being added now.",
+    'panel.imp.comoTitulo': 'How we worked it out',
+    'panel.imp.m.incompleta1': "1 expense of {total} doesn't count: it's missing the tax ID or the VAT breakdown. Ask the supplier for the full invoice.",
+    'panel.imp.m.incompleta': "{n} expenses for {total} don't count: they're missing the tax ID or the VAT breakdown. Ask the supplier for the full invoice.",
+    'panel.imp.m.fuera_ue1': "1 invoice from outside the EU of {total} isn't calculated: send it to your accountant.",
+    'panel.imp.m.fuera_ue': "{n} invoices from outside the EU for {total} aren't calculated: send them to your accountant.",
+    'panel.imp.m.vehiculo': "Car ({n}): you deduct half the VAT and it isn't an income tax expense, unless you only use it for work.",
+    'panel.imp.m.atenciones': "Meals with clients ({n}): their VAT can't be deducted. They do count for income tax, up to 1% of your income.",
+    'panel.imp.m.suministros': 'Home utilities ({n}): only the part of your home you work in, and for income tax 30% of that part.',
+    'panel.imp.m.amortizar': "Equipment over €300 ({n}): it isn't deducted all at once for income tax, it's depreciated over several years. Ask your accountant how much applies this year.",
+    'panel.imp.m.intracomunitaria': "EU suppliers without VAT ({n}): you declare the VAT (21%) and deduct it at the same time, so you don't pay extra. You must be registered in the ROI (form 036).",
     'panel.imp.facturas1': 'From 1 invoice',
     'panel.imp.facturas': 'From {n} invoices',
     'panel.imp.copiar': 'Copy the amount in box {n}',
@@ -167,8 +201,6 @@ const textos = {
     'panel.imp.regimen_simplificado': 'Under the simplified scheme it is calculated by modules (303 and 131). Send the report to your accountant.',
     'panel.imp.regimen_recargo_equivalencia': "With the equivalence surcharge you don't file form 303 for this activity.",
     'panel.imp.sin_perfil': 'Complete your tax profile to calculate it.',
-    'panel.imp.noDeducibles1': "1 expense this quarter ({total}) doesn't count because it's missing the tax ID or the VAT breakdown. Ask for the full invoice.",
-    'panel.imp.noDeducibles': "{n} expenses this quarter ({total}) don't count because they're missing the tax ID or the VAT breakdown. Ask for the full invoice.",
     'panel.imp.sede': 'Go to the Tax Agency website',
     'panel.imp.informe': 'Report for your accountant',
     'panel.imp.aviso': "It's a guide: check the figures before filing and ask your accountant if in doubt.",
@@ -295,6 +327,10 @@ function cifrasPersonal(d) {
 
 // ---------- Impresos (versión de empresa) ----------
 
+// Orden en el que se explican los motivos: primero lo que no cuenta nada.
+const MOTIVOS = ['incompleta', 'fuera_ue', 'vehiculo', 'atenciones', 'suministros', 'amortizar', 'intracomunitaria'];
+const MOTIVOS_AVISO = ['incompleta', 'fuera_ue'];
+
 function impresos(d) {
   const i = d.impresos;
   if (!i) return '';
@@ -303,19 +339,31 @@ function impresos(d) {
     ${m.aplica
       ? seguro(html`<ul class="panel-casillas">${m.casillas.map((c) => seguro(html`<li class="panel-casilla">
           <span class="panel-casilla-texto"><span class="panel-casilla-numero">${t('panel.imp.casilla', { n: c.casilla })}</span>
-            <span class="texto-2">${t(`panel.imp.${c.concepto}`)}</span></span>
+            <span class="texto-2">${t(`panel.imp.c.${m.modelo}-${c.casilla}`)}</span></span>
           <span class="panel-casilla-importe importe">${dinero(c.importe)}</span>
           <button type="button" class="boton-icono" data-copiar="${c.importe}" aria-label="${t('panel.imp.copiar', { n: c.casilla })}"
             title="${t('panel.imp.copiar', { n: c.casilla })}">${seguro(icono('copiar'))}</button>
         </li>`))}</ul>
-        <p class="texto-2 panel-modelo-pie">${m.numFacturas === 1 ? t('panel.imp.facturas1') : t('panel.imp.facturas', { n: m.numFacturas })}</p>`)
+        <p class="texto-2 panel-modelo-pie">${m.numFacturas === 1 ? t('panel.imp.facturas1') : t('panel.imp.facturas', { n: m.numFacturas })}</p>
+        ${m.cuotaAutonomos ? seguro(html`<p class="texto-2 panel-modelo-pie">${t('panel.imp.cuota', {
+          total: dinero(m.cuotaAutonomos.total), meses: m.cuotaAutonomos.meses, mensual: dinero(m.cuotaAutonomos.mensual),
+        })}</p>`) : ''}`)
       : seguro(html`<p class="texto-2">${t(`panel.imp.${m.motivo}`)}</p>`)}
   </div>`));
-  const noDeducibles = i.noDeducibles.num
-    ? html`<a class="banner banner-aviso" href="/app/avisos">${seguro(icono('alerta'))}<span class="banner-texto">${i.noDeducibles.num === 1
-      ? t('panel.imp.noDeducibles1', { total: dinero(i.noDeducibles.total) })
-      : t('panel.imp.noDeducibles', { n: i.noDeducibles.num, total: dinero(i.noDeducibles.total) })}</span>${seguro(icono('flecha', 'banner-flecha'))}</a>`
-    : '';
+
+  // Por qué algo no cuenta entero. Lo que no cuenta nada va como aviso (rojo); el resto, explicado.
+  const explicaciones = MOTIVOS.filter((m) => i.motivos[m]).map((m) => {
+    const clave = MOTIVOS_AVISO.includes(m) && i.motivos[m].num === 1 ? `panel.imp.m.${m}1` : `panel.imp.m.${m}`;
+    const texto = t(clave, { n: i.motivos[m].num, total: dinero(i.motivos[m].total) });
+    return MOTIVOS_AVISO.includes(m)
+      ? seguro(html`<li class="banner banner-aviso">${seguro(icono('alerta'))}<span class="banner-texto">${texto}</span></li>`)
+      : seguro(html`<li class="panel-motivo">${seguro(icono('destello'))}<span>${texto}</span></li>`);
+  });
+  if (i.sinCuotaAutonomos) {
+    explicaciones.push(seguro(html`<li><a class="banner" href="/app/ajustes#empresa">${seguro(icono('euro'))}
+      <span class="banner-texto">${t('panel.imp.sinCuota')}</span>${seguro(icono('flecha', 'banner-flecha'))}</a></li>`));
+  }
+
   return html`<section class="tarjeta panel-impresos">
     <div class="tarjeta-cabecera">
       <h2 class="titulo-seccion">${t('panel.imp.titulo', { t: i.trimestre, anio: i.anio })}</h2>
@@ -323,7 +371,10 @@ function impresos(d) {
     </div>
     <p class="texto-2">${t('panel.imp.texto')}</p>
     <div class="panel-modelos">${modelos}</div>
-    ${seguro(noDeducibles)}
+    ${explicaciones.length ? seguro(html`<div>
+      <h3 class="panel-modelo-titulo">${t('panel.imp.comoTitulo')}</h3>
+      <ul class="panel-motivos">${explicaciones}</ul>
+    </div>`) : ''}
     <div class="panel-impresos-botones">
       <a class="boton boton-principal" href="${i.sede}" target="_blank" rel="noopener noreferrer">${t('panel.imp.sede')}</a>
       <a class="boton boton-secundario" href="/app/informes">${t('panel.imp.informe')}</a>

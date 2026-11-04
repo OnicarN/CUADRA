@@ -94,3 +94,6 @@
 .panel-impresos-botones { display: flex; flex-wrap: wrap; gap: var(--e-3); }
 @media (max-width: 599px) { .panel-impresos-botones .boton { flex: 1 1 100%; } }
 .panel-impresos-aviso { font-size: 13px; }
+.panel-motivos { list-style: none; margin: 0; padding: 0; display: flex; flex-direction: column; gap: var(--e-2); }
+.panel-motivo { display: flex; align-items: flex-start; gap: var(--e-3); font-size: 14px; line-height: 1.45; padding: var(--e-1) 0; }
+.panel-motivo svg { width: 20px; height: 20px; color: var(--acento); flex: none; margin-top: 1px; }
