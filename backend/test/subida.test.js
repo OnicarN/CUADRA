@@ -141,7 +141,7 @@ test('estado de la lectura de una factura subida', async () => {
   assert.ok(id);
 });
 
-// ---- Gastos a mano en la versión personal (#54) ----
+// ---- Gastos a mano (#54) ----
 
 async function apuntar(cookie, cuerpo) {
   const respuesta = await fetch(`${servidor.url}/api/subida/manual`, {
@@ -150,13 +150,14 @@ async function apuntar(cookie, cuerpo) {
   return { estado: respuesta.status, datos: await respuesta.json() };
 }
 
-test('gasto a mano: solo en la versión personal, sin archivo y sin gastar lecturas', async () => {
+test('gasto a mano: en empresa y en personal, sin archivo y sin gastar lecturas', async () => {
   const { id, cookie } = await crearUsuario('manual1@prueba.es', { conPerfil: false });
   const gasto = { fecha: '2026-11-02', concepto: 'Parking Plaza Mayor', total: '4.50' };
 
   const enEmpresa = await apuntar(cookie, gasto);
-  assert.equal(enEmpresa.estado, 400);
-  assert.equal(enEmpresa.datos.detalles.codigo, 'solo_personal');
+  assert.equal(enEmpresa.estado, 201);
+  const { rows: [deEmpresa] } = await db.query('SELECT version, origen FROM facturas WHERE id = $1', [enEmpresa.datos.id]);
+  assert.deepEqual(deEmpresa, { version: 'empresa', origen: 'manual' });
 
   await db.query("INSERT INTO versiones_usuario (usuario_id, version_actual) VALUES ($1, 'personal')", [id]);
   const { rows: [categoria] } = await db.query("SELECT id FROM categorias WHERE clave = 'combustible'");

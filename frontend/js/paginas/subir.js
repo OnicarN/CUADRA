@@ -124,7 +124,7 @@ const ACEPTADOS = 'application/pdf,image/jpeg,image/png,image/heic,image/heif,.p
 const EXTENSIONES = /\.(pdf|jpe?g|png|heic|heif)$/i;
 const TAMANO_MAXIMO = 15 * 1024 * 1024;
 
-const { usuario, version } = await iniciarPagina({ pagina: 'subir', privada: true, textos });
+const { usuario } = await iniciarPagina({ pagina: 'subir', privada: true, textos });
 
 const contenido = document.getElementById('contenido');
 contenido.innerHTML = html`
@@ -145,7 +145,7 @@ contenido.innerHTML = html`
       <div class="zona-acciones">
         <button type="button" class="boton boton-principal" id="elegir">${seguro(icono('subir'))}${t('subir.boton')}</button>
         <button type="button" class="boton boton-secundario" id="abrir-camara">${seguro(icono('camara'))}${t('subir.foto')}</button>
-        ${version === 'personal' ? seguro(html`<button type="button" class="boton boton-secundario" id="abrir-manual">${seguro(icono('editar'))}${t('subir.manual')}</button>`) : ''}
+        <button type="button" class="boton boton-secundario" id="abrir-manual">${seguro(icono('editar'))}${t('subir.manual')}</button>
       </div>
       <p class="texto-2 solo-ordenador">${t('subir.zona.arrastra')}</p>
       <p class="zona-suelta" aria-hidden="true">${t('subir.zona.suelta')}</p>
@@ -480,7 +480,7 @@ if (new URLSearchParams(location.search).has('compartido')) {
   }
 }
 
-// ---- Gasto a mano, solo en la versión personal (#54) ----
+// ---- Gasto a mano, en las dos versiones (#54) ----
 const seccionManual = document.getElementById('manual');
 const formManual = document.getElementById('form-manual');
 let categoriasCargadas = false;
@@ -498,7 +498,7 @@ async function abrirManual() {
   formManual.elements.total.focus({ preventScroll: true });
 }
 
-document.getElementById('abrir-manual')?.addEventListener('click', abrirManual);
+document.getElementById('abrir-manual').addEventListener('click', abrirManual);
 document.getElementById('cancelar-manual').addEventListener('click', () => {
   formManual.reset();
   seccionManual.hidden = true;
