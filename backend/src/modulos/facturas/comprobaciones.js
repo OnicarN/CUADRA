@@ -19,6 +19,7 @@ import { normalizarNif } from '../../core/validacion.js';
 import { peticionIncorrecta, noEncontrado, conflicto } from '../../core/errores.js';
 import { obtenerPerfil } from '../perfil/servicio.js';
 import { borrarFactura } from './revision.js';
+import { esNifUe } from '../panel/deducibilidad.js';
 
 // Diferencia que se permite entre base + IVA y el total, por los redondeos de cada ticket.
 const TOLERANCIA = 0.02;
@@ -95,10 +96,11 @@ export async function comprobarFactura(facturaId) {
       });
 
       // Sin el NIF del emisor o del receptor, o sin el IVA desglosado, no se puede deducir el IVA:
-      // hay que pedir la factura completa. Las facturas en otra moneda no se miran por el IVA,
-      // porque las de fuera de España no lo llevan.
+      // hay que pedir la factura completa. Las facturas en otra moneda o de un proveedor de otro
+      // país de la UE (Google, Adobe… desde Irlanda) no llevan IVA español y no se miran por el
+      // IVA: van con inversión del sujeto pasivo (panel/deducibilidad.js).
       const { rows: [{ lineas }] } = await db.query('SELECT count(*)::int AS lineas FROM factura_iva WHERE factura_id = $1', [facturaId]);
-      const sinDesglose = f.moneda === 'EUR' && !lineas && f.cuota_iva === null;
+      const sinDesglose = f.moneda === 'EUR' && !esNifUe(f.nif_emisor) && !lineas && f.cuota_iva === null;
       const falta = [!f.nif_emisor && 'emisor', !f.nif_receptor && 'receptor', sinDesglose && 'iva'].filter(Boolean);
       await avisarSi(falta.length > 0, { ...contexto, tipo: TIPOS_AVISO.SIN_NIF, datos: { falta } });
       // Si ya estaba abierto y ahora falta otra cosa (por ejemplo, ha puesto el NIF), se actualiza el texto.

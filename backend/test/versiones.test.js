@@ -49,7 +49,11 @@ before(async () => {
 after(async () => { await servidor.cerrar(); });
 
 test('por defecto es empresa; se cambia y se guarda el presupuesto', async () => {
-  assert.deepEqual((await lucia.cliente.get('/api/versiones')).datos, { actual: 'empresa', personal: { presupuesto_mensual: null } });
+  assert.deepEqual((await lucia.cliente.get('/api/versiones')).datos, {
+    actual: 'empresa',
+    personal: { presupuesto_mensual: null },
+    empresa: { cuota_autonomos_mensual: null, vivienda_afecta_pct: null },
+  });
   const { estado, datos } = await cambiar(lucia.cliente, 'personal');
   assert.equal(estado, 200);
   assert.equal(datos.actual, 'personal');
@@ -154,7 +158,7 @@ test('panel de empresa: casillas del 303 y del 130 con lo que se puede deducir',
   assert.deepEqual([impresos.anio, impresos.trimestre, impresos.plazo], [2026, 4, '2027-01-30']);
   const casillas = Object.fromEntries(impresos.impresos.flatMap((i) => (i.casillas || []).map((c) => [`${i.modelo}-${c.casilla}`, c.importe])));
   assert.deepEqual(casillas, { '303-28': 150, '303-29': 26, '130-02': 350 });
-  assert.deepEqual(impresos.noDeducibles, { num: 1, total: 18.5 });
+  assert.deepEqual(impresos.motivos, { incompleta: { num: 1, total: 18.5 } });
 
   // Del 1 al 20 de enero toca presentar el T4 del año anterior.
   assert.equal((await calcularImpresos(lucia.id, '2027-01-15')).trimestre, 4);
